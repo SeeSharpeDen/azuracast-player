@@ -36,6 +36,9 @@ const Radio = {
             this.audio.pause();
         } else {
             this.audio.play();
+            if (Renderer != null) {
+                Renderer.play();
+            }
         }
     },
 
@@ -45,8 +48,8 @@ const Radio = {
         this.audio.volume = value;
 
         // Apply a volume scale to the visualiser.
-        if (Visualiser != null) {
-            Visualiser.volume_scale = value;
+        if (this.Renderer != null && this.Renderer.visualiser != null) {
+            this.Renderer.visualiser = value;
         }
     },
 

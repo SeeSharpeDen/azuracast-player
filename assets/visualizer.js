@@ -2,7 +2,7 @@
 // tutorial by Iskander Samatov.
 // https://blog.logrocket.com/audio-visualizer-from-scratch-javascript/
 
-const Visualiser = {
+const RadialWave = {
     radius: 300,
     radius_margin: 200,
     revolutions: 5,
@@ -11,10 +11,14 @@ const Visualiser = {
     scale: 0.0175,
     volume_scale: 1,
     line_width: 2,
-    draw(ctx, samples, samples_data) {
+    draw(ctx, samples_data) {
+        let samples = samples_data.length;
+
+        // Get the middle of the canvas.
         let middle_x = canvas.width / 2;
         let middle_y = canvas.height / 2;
 
+        // Create our gradient.
         var gradient = ctx.createRadialGradient(middle_x, middle_y, this.radius - this.line_width * 2, middle_x, middle_y, this.radius + this.radius_margin);
         gradient.addColorStop(0, "rgba(0,0,0,1)");
         gradient.addColorStop(0.1, "#044224");
@@ -45,7 +49,7 @@ const Visualiser = {
             // how many times around a circle should we go?
             t *= this.revolutions * 2 * Math.PI;
             // rotate that circle over time.
-            t += time * this.rotate_speed;
+            t += Renderer.time * this.rotate_speed;
 
             // Draw the circle.
             ctx.lineTo(
@@ -60,65 +64,111 @@ const Visualiser = {
     }
 }
 
+const Renderer = {
+    visualiser: RadialWave,
+    analyser: null,
+    video_ctx: null,
+    time: 0.0,
+    last_time: null,
+    freq_data_buffer: null,
+    anim_frame_handle: null,
+    play() {
 
-let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-let audioSource = null;
-let analyser = null;
+        if (this.analyser == null) {
+            console.info("Initialising Audio for the first time.");
+            this.init_audio();
+        }
 
-audioSource = audioCtx.createMediaElementSource(Radio.audio);
+        if (this.video_ctx == null) {
+            console.info("Initialising Video for the first time.");
+            this.init_video();
+        }
 
-// The audio analyser.
-analyser = audioCtx.createAnalyser();
-// How smooth the changes are.
-analyser.smoothingTimeConstant = 0.95;
-// How many samples.
-analyser.fftSize = 512;
+        this.frame_callback()
+    },
+    stop() {
+        window.cancelAnimationFrame(Renderer.anim_frame_handle)
+    },
+    init_video() {
+        // Get the canvas.
+        var canvas = document.getElementById("canvas");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
-// The range of audio to sample.
-analyser.minDecibels = -70;
-analyser.maxDecibels = -20;
+        // Get the canvas context.
+        this.video_ctx = canvas.getContext("2d");
 
-audioSource.connect(analyser);
-analyser.connect(audioCtx.destination);
+        // Reset the time.
+        this.time = 0.0;
+    },
+    init_audio() {
+        // Create the audio context and audio source.
+        let audio_ctx = new (window.AudioContext || window.webkitAudioContext)();
+        let audio_source = audio_ctx.createMediaElementSource(Radio.audio);
 
+        // Create our audio analyser.
+        this.analyser = audio_ctx.createAnalyser();
+        // this.analyser.smoothingTimeConstant = 0.775;
+        this.analyser.smoothingTimeConstant = 0.95;
 
-var canvas = document.getElementById("canvas");
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+        this.analyser.fftSize = 512;
+        this.analyser.minDecibels = -70;
+        this.analyser.maxDecibels = -20;
 
-var ctx = canvas.getContext("2d");
-// Gentle fade.
-// ctx.fillStyle = "rgba(0,0,0,0.1)"
-// Slow fade.
-// ctx.fillStyle = "rgba(0,0,0,0.03)"
-// Fast fade.
-ctx.fillStyle = "rgba(0,0,0,0.2)"
+        // Connect our analyser to the audio.
+        audio_source.connect(this.analyser);
+        this.analyser.connect(audio_ctx.destination);
 
+        // Create our data buffer.
+        this.freq_data_buffer = new Uint8Array(this.analyser.frequencyBinCount);
 
-const bufferLength = analyser.frequencyBinCount;
-const dataArray = new Uint8Array(bufferLength);
+        console.log(this.analyser);
+    },
+    frame_callback() {
+        // Draw our frame.
+        Renderer.tick();
 
-let time = 0;
-let lastTime;
-function animate() {
-    // ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    analyser.getByteFrequencyData(dataArray);
+        // Get a render frame.
+        Renderer.anim_frame_handle = window.requestAnimationFrame(Renderer.frame_callback);
+    },
+    tick() {
+        // Bail if there's not audio, video or visualiser.
+        if (this.analyser == null) {
+            console.log(this.analyser);
+            console.warn("Audio has not been initialised.");
+            return;
+        }
+        if (this.visualiser == null) {
+            console.warn("No Visualiser to animate.");
+            return;
+        }
+        if (this.video_ctx == null) {
+            console.warn("Video has not been initialised.");
+            return;
+        }
 
-    let now = Date.now();
-    let delta = (now - lastTime) / 1000;
-    lastTime = now;
+        // Only slightly clear the screen.
+        // this.video_ctx.fillStyle = "rgba(0,0,0,0.2)";
+        // this.video_ctx.fillRect(0, 0, canvas.width, canvas.height);
+        this.video_ctx.clearRect(0,0, canvas.width, canvas.height);
 
-    if (!isNaN(delta)) {
-        time += delta;
-    }
+        // Get the delta time.
+        let now = Date.now();
+        let delta = (now - this.last_time) / 1000;
+        this.last_time = now;
 
-    Visualiser.draw(ctx, bufferLength, dataArray);
-    requestAnimationFrame(animate);
+        if (!isNaN(delta)) {
+            this.time += delta;
+        }
+
+        // Get the audio spectrum data.
+        this.analyser.getByteFrequencyData(this.freq_data_buffer);
+
+        // Draw the visualiser.
+        this.visualiser.draw(this.video_ctx, this.freq_data_buffer);
+    },
+    intensity_range: 0.25,
 }
-
-animate();
-
 
 // For resizing
 // https://stackoverflow.com/a/30688151
