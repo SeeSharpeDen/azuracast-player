@@ -46,11 +46,6 @@ const Radio = {
     setVolume(value) {
         // Change the volume of the audio source.
         this.audio.volume = value;
-
-        // Apply a volume scale to the visualiser.
-        if (this.Renderer != null && this.Renderer.visualiser != null) {
-            this.Renderer.visualiser = value;
-        }
     },
 
     // Download the current song details.

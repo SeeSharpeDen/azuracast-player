@@ -1,5 +1,5 @@
 body {
-    background-color: black;
+    background-color: #050505;
     height: 100vh;
     color: rgb(210, 207, 219);
     font-family: sans-serif;
@@ -16,13 +16,20 @@ body {
 }
 
 
-.player {
+.player,
+.debug-menu {
     border-radius: 1em;
     padding: 0;
     display: block;
     background-color: #95959524;
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
+}
+
+.debug-menu .stack {
+    display: flex;
+    flex-direction: column;
+    margin: 1em;
 }
 
 .player .blurb {
@@ -51,7 +58,7 @@ body {
 }
 
 .player .stack {
-    margin: 1em 0;
+    margin: 0 0;
 }
 
 .controls {
@@ -60,8 +67,9 @@ body {
     align-items: center;
 }
 
-.controls button,
-.controls #volume-slider {
+button,
+.volume img,
+input[type=range] {
     display: block;
     /* border: none; */
     background-color: inherit;
@@ -71,56 +79,59 @@ body {
     margin: 0;
 }
 
-.controls button {
+button {
     border: none;
 }
 
 .controls span img,
-.controls button img {
+button img {
     height: 36px;
 }
 
-.controls button:hover,
-.controls button:focus,
-.controls #volume-slider:hover,
-.controls #volume-slider:focus {
+button:hover,
+button:focus,
+input[type=range]:hover,
+input[type=range]:focus {
     opacity: 1;
 }
 
-#volume-slider {
+input[type=range] {
     -webkit-appearance: none;
     height: 0;
+    margin: 1em 0;
     opacity: inherit;
     border: 2px solid rgba(210, 207, 219, 0.2);
     border-radius: 4px;
 }
 
-#volume-slider::before {
+input[type=range]::before {
     border: 2px solid rgb(210, 207, 219);
     display: block;
     width: 100%;
 }
 
-#volume-slider::-webkit-slider-thumb {
+input[type=range]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 36px;
-    height: 36px;
+    width: 10px;
+    height: 10px;
     background: none;
     cursor: pointer;
-    border: none;
-    background-image: url("./music-controls.svg#volume");
+    border: 2px solid white;
+    border-radius: 10px;
+    /* background-image: url("./music-controls.svg#volume"); */
 }
 
-#volume-slider::-moz-range-thumb {
+input[type=range]::-moz-range-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 36px;
-    height: 36px;
+    width: 10px;
+    height: 10px;
     background: none;
     cursor: pointer;
-    border: none;
-    background-image: url("./music-controls.svg#volume");
+    border: 2px solid white;
+    border-radius: 10px;
+    /* background-image: url("./music-controls.svg#volume"); */
 }
 
 canvas {

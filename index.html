@@ -17,9 +17,15 @@
 
 <body>
     <a href="./"><img class="header-logo" src="https://cdn.virial.xyz/7r9cmCZm/logofull.png"></a>
+    <!-- <div class="stack debug-menu">
+        <h3>Debug Menu</h3>
+        <p>Renderer.intensity_g_offset</p>
+        <input type="range" min="0" max="1024" oninput="Renderer.intensity_g_offset=Number(this.value)">
+        <p>Renderer.intensity_g_range</p>
+        <input type="range" min="1" max="100" oninput="Renderer.intensity_g_width=Number(this.value)">
+    </div> -->
     <div class="player">
-        <div class="album-art">
-            <img src="https://server1.wingless.cc:2087/static/uploads/album_art.1657710906.jpg">
+        <div class="album-art"><img src="https://server1.wingless.cc:2087/static/uploads/album_art.1657710906.jpg">
         </div>
         <div class="stack">
             <div class="track-details">
@@ -31,8 +37,11 @@
                     <img class="play-icon" src="./assets/music-controls.svg#play" alt="⏯️">
                     <img class="pause-icon" src="./assets/music-controls.svg#pause" alt="⏯️" hidden>
                 </button>
-                <input type="range" id="volume-slider" min="0" max="100" value="25"
-                    oninput="Radio.setVolume(this.value / 100)">
+                <span class="volume">
+                    <img src="./assets/music-controls.svg#volume" style="float: left; margin-right: 1em;">
+                    <input type="range" id="volume-slider" min="0" max="100" style="display: inline-block;"
+                        oninput="Radio.setVolume(this.value / 100)">
+                </span>
             </div>
             <p class="blurb">There's <span id="listeners">nobody</span> listening.</p>
         </div>
