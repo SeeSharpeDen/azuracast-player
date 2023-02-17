@@ -1,0 +1,179 @@
+body {
+    background-color: black;
+    height: 100vh;
+    color: rgb(210, 207, 219);
+    font-family: sans-serif;
+}
+
+.header-logo {
+    width: 150px;
+    opacity: 70%;
+    transition: opacity 0.25s;
+}
+
+.header-logo:hover {
+    opacity: 100%;
+}
+
+
+.player {
+    border-radius: 1em;
+    padding: 0;
+    display: block;
+    background-color: #95959524;
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+}
+
+.player .blurb {
+    font-style: italic;
+    font-size: 0.8em;
+    opacity: 0.5;
+}
+
+.player .album-art {
+    width: 450px;
+    aspect-ratio: 1;
+}
+
+.album-art img {
+    width: 100%;
+}
+
+.player #track-name,
+.player #artist-name {
+    text-transform: capitalize;
+}
+
+.player h2,
+.player p {
+    margin: 0.2rem 0;
+}
+
+.player .stack {
+    margin: 1em 0;
+}
+
+.controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.controls button,
+.controls #volume-slider {
+    display: block;
+    /* border: none; */
+    background-color: inherit;
+    color: inherit;
+    opacity: 0.5;
+    padding: 0;
+    margin: 0;
+}
+
+.controls button {
+    border: none;
+}
+
+.controls span img,
+.controls button img {
+    height: 36px;
+}
+
+.controls button:hover,
+.controls button:focus,
+.controls #volume-slider:hover,
+.controls #volume-slider:focus {
+    opacity: 1;
+}
+
+#volume-slider {
+    -webkit-appearance: none;
+    height: 0;
+    opacity: inherit;
+    border: 2px solid rgba(210, 207, 219, 0.2);
+    border-radius: 4px;
+}
+
+#volume-slider::before {
+    border: 2px solid rgb(210, 207, 219);
+    display: block;
+    width: 100%;
+}
+
+#volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 36px;
+    height: 36px;
+    background: none;
+    cursor: pointer;
+    border: none;
+    background-image: url("./music-controls.svg#volume");
+}
+
+#volume-slider::-moz-range-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 36px;
+    height: 36px;
+    background: none;
+    cursor: pointer;
+    border: none;
+    background-image: url("./music-controls.svg#volume");
+}
+
+canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -100;
+    -webkit-animation: filter-animation 60s infinite;
+    animation: filter-animation 60s infinite;
+}
+
+@-webkit-keyframes filter-animation {
+    0% {
+        -webkit-filter: hue-rotate(0deg);
+    }
+
+    25% {
+        -webkit-filter: hue-rotate(90deg);
+    }
+
+    50% {
+        -webkit-filter: hue-rotate(180deg);
+    }
+
+    75% {
+        -webkit-filter: hue-rotate(270deg);
+    }
+
+    100% {
+        -webkit-filter: hue-rotate(360deg);
+    }
+}
+
+@keyframes filter-animation {
+    0% {
+        filter: hue-rotate(0deg);
+    }
+
+    25% {
+        filter: hue-rotate(90deg);
+    }
+
+    50% {
+        filter: hue-rotate(180deg);
+    }
+
+    75% {
+        filter: hue-rotate(270deg);
+    }
+
+    100% {
+        filter: hue-rotate(360deg);
+    }
+}
