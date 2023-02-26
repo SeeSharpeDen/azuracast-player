@@ -60,10 +60,17 @@ const Radio = {
             return;
         }
 
+        // Change the header logo juuuuussssttt for 'ninajs'
+        if (station_shortcode == "ninajs") {
+            document.querySelector("a img.header-logo").src = "./assets/graphics/tomify.png";
+        } else {
+            document.querySelector("a img.header-logo").src = "https://cdn.virial.xyz/7r9cmCZm/logofull.png";
+        }
+
         // Get the station.
         let station = null;
         this.stations.forEach(stn => {
-            if(stn.shortcode == station_shortcode) {
+            if (stn.shortcode == station_shortcode) {
                 station = stn;
             }
         });
@@ -81,7 +88,7 @@ const Radio = {
         // Immediately download the details about the radio station.
         this.getDetail(station_shortcode);
 
-        
+
         // Then every 5 seconds also download the details.
         this.interval_handle = setInterval(() => {
             Radio.getDetail(station_shortcode);
