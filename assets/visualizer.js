@@ -3,143 +3,131 @@
 // https://blog.logrocket.com/audio-visualizer-from-scratch-javascript/
 
 // The main visualiser.
-const RadialWave = {
-    radius: 200,
-    radius_margin: 170,
-    revolutions: 1,
-    rotate_speed: 0.08,
-    power: 1.7,
-    scale: 0.4,
-    volume_scale: 1,
-    line_width: 2,
-    radius_intensity: 40,
-    draw(ctx, samples_data, intensity) {
-        let samples = Math.round(samples_data.length * 0.6);
+const Visualisers = {
+    RadialWave: {
+        radius: 200,
+        radius_margin: 170,
+        revolutions: 1,
+        rotate_speed: 0.08,
+        power: 1.7,
+        scale: 0.4,
+        volume_scale: 1,
+        line_width: 3,
+        radius_intensity: 40,
+        draw(ctx, samples_data, intensity) {
+            let samples = Math.round(samples_data.length * 0.6);
 
-        // Get the middle of the canvas.
-        let middle_x = canvas.width / 2;
-        let middle_y = canvas.height / 2;
+            // Get the middle of the canvas.
+            let middle_x = canvas.width / 2;
+            let middle_y = canvas.height / 2;
 
-        let radius = this.radius + (intensity * this.radius_intensity);
+            let radius = this.radius + (intensity * this.radius_intensity);
 
-        // Create our gradient.
-        var gradient = ctx.createRadialGradient(middle_x, middle_y, radius - this.line_width * 4, middle_x, middle_y, radius + this.radius_margin);
-        gradient.addColorStop(0, "#000000");
-        gradient.addColorStop(0.05, "#ff0000");
-        // gradient.addColorStop(0.5, "#ff0000");
-        gradient.addColorStop(0.7, "#ffffff");
+            // Create our gradient.
+            var gradient = ctx.createRadialGradient(middle_x, middle_y, radius - this.line_width * 4, middle_x, middle_y, radius + this.radius_margin);
+            gradient.addColorStop(0, "#000000");
+            gradient.addColorStop(0.05, "#ff0000");
+            // gradient.addColorStop(0.5, "#ff0000");
+            gradient.addColorStop(0.7, "#ffffff");
 
-        let value;
+            let value;
 
-        ctx.beginPath();
+            ctx.beginPath();
 
-        for (let i = 0; i < samples * 2; i++) {
+            for (let i = 0; i < samples * 2; i++) {
 
-            // Get the scale of this point.
-            // We are sampling the data in both directions.
-            if (i >= samples) {
-                value = samples_data[samples - i + samples] / 256.0;
+                // Get the scale of this point.
+                // We are sampling the data in both directions.
+                if (i >= samples) {
+                    value = samples_data[samples - i + samples] / 256.0;
+                }
+                else {
+                    value = samples_data[i] / 256.0;
+                }
+                value = Math.pow(value, this.power);
+                // Scale our value.
+                value *= this.scale;
+                // Compensate for the volume slider.
+                value *= Math.max(1.0 / this.volume_scale, 2.0);
+
+                // How many steps are there?
+                let t = (i * 0.5) / samples;
+                // how many times around a circle should we go?
+                t *= this.revolutions * 2 * Math.PI;
+                // rotate that circle over time.
+                t += Renderer.time * this.rotate_speed;
+
+                // Draw the circle.
+                ctx.lineTo(
+                    middle_x + (radius + (value * this.radius_margin)) * Math.cos(t),
+                    middle_y + (radius + (value * this.radius_margin)) * Math.sin(t)
+                );
             }
-            else {
-                value = samples_data[i] / 256.0;
-            }
-            value = Math.pow(value, this.power);
-            // Scale our value.
-            value *= this.scale;
-            // Compensate for the volume slider.
-            value *= Math.max(1.0 / this.volume_scale, 2.0);
+            ctx.strokeStyle = gradient;
+            ctx.fillStyle = "black";
+            ctx.lineWidth = this.line_width;
 
-            // How many steps are there?
-            let t = (i * 0.5) / samples;
-            // how many times around a circle should we go?
-            t *= this.revolutions * 2 * Math.PI;
-            // rotate that circle over time.
-            t += Renderer.time * this.rotate_speed;
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
 
-            // Draw the circle.
-            ctx.lineTo(
-                middle_x + (radius + (value * this.radius_margin)) * Math.cos(t),
-                middle_y + (radius + (value * this.radius_margin)) * Math.sin(t)
-            );
+            ctx.beginPath();
+            ctx.arc(middle_x, middle_y, radius, 0, 360);
+            ctx.fill();
+            ctx.stroke();
         }
-        ctx.strokeStyle = gradient;
-        ctx.fillStyle = "black";
-        ctx.lineWidth = this.line_width;
-
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.arc(middle_x, middle_y, radius, 0, 360);
-        ctx.fill();
-        ctx.stroke();
-    }
-}
-
-// Just a plain jane visualiser for debugging purposes.
-const Spectrum = {
-    line_width: 2,
-    draw(ctx, samples_data, intensity) {
-        let samples = samples_data.length;
-
-        let spacing = canvas.width / samples;
-
-        let value;
-        ctx.beginPath();
-
-        for (let i = 0; i < samples; i++) {
-            ctx.lineTo(spacing * i, samples_data[i]);
-        }
-        ctx.strokeStyle = "white";
-        ctx.stroke();
-    }
-}
-
-// A visualiser used to show what parts of thw waveform are being used for "intensity"/beats.
-const SpectrumGaussian = {
-    line_width: 2,
-    draw(ctx, samples_data, intensity) {
-        let samples = samples_data.length;
-
-        let spacing = canvas.width / samples;
-
-        let value;
-        ctx.beginPath();
-
-        // Draw the Gaussian function.
-        for (let i = 0; i < samples; i++) {
-            ctx.lineTo(i * spacing, gaussian(i, Renderer.intensity_g_width, Renderer.intensity_g_offset) * 100);
-        }
-        ctx.strokeStyle = "red";
-        ctx.stroke();
-
-        ctx.beginPath();
-
-        // Draw the waveform multiplied by the function.
-        let start = Math.max(0, Renderer.intensity_g_offset - Renderer.intensity_g_width * 2);
-        let end = Math.min(samples, Renderer.intensity_g_offset + Renderer.intensity_g_width * 2);
-        for (let i = start; i < end; i++) {
-            ctx.lineTo(i * spacing, gaussian(i, Renderer.intensity_g_width, Renderer.intensity_g_offset) * samples_data[i]);
-        }
-        ctx.strokeStyle = "green";
-        ctx.stroke();
-
     },
+    // Just a plain jane visualiser for debugging purposes.
+    Spectrum: {
+        line_width: 1,
+        draw(ctx, samples_data, intensity) {
+            let samples = samples_data.length;
+            let spacing = canvas.width / samples;
+
+            // Draw the waveform multiplied by the function.
+            ctx.lineWidth = this.line_width + intensity * 10;
+            ctx.beginPath();
+            let start = Math.max(0, Renderer.intensity_g_offset - Renderer.intensity_g_width * 2);
+            let end = Math.min(samples, Renderer.intensity_g_offset + Renderer.intensity_g_width * 2);
+            for (let i = start; i < end; i++) {
+                ctx.lineTo(i * spacing, intensity * 256 + gaussian(i, Renderer.intensity_g_width, Renderer.intensity_g_offset) * samples_data[i]);
+            }
+            ctx.strokeStyle = "green";
+            ctx.stroke();
+
+            // Draw the Gaussian function.
+            ctx.beginPath();
+            ctx.lineWidth = this.line_width;
+            for (let i = 0; i < samples; i++) {
+                ctx.lineTo(i * spacing, gaussian(i, Renderer.intensity_g_width, Renderer.intensity_g_offset) * 100);
+            }
+            ctx.strokeStyle = "red";
+            ctx.stroke();
+
+            // Just draw the waveform.
+            ctx.beginPath();
+            for (let i = 0; i < samples; i++) {
+                ctx.lineTo(spacing * i, samples_data[i]);
+            }
+            ctx.strokeStyle = "white";
+            ctx.stroke();
+        }
+    }
 }
 
 // The actual renderer.
 const Renderer = {
     // An array of visualisers to use.
-    visualisers: [RadialWave, /*Spectrum, SpectrumGaussian*/],
+    visualiser: Visualisers.RadialWave,
     analyser: null,
     video_ctx: null,
     time: 0.0,
     last_time: null,
     freq_data_buffer: null,
-    anim_frame_handle: null,
     intensity_g_width: 3,
     intensity_g_offset: 5,
+    frame_handle: 0,
+
     play() {
 
         if (this.analyser == null) {
@@ -155,7 +143,21 @@ const Renderer = {
         this.frame_callback()
     },
     stop() {
-        window.cancelAnimationFrame(Renderer.anim_frame_handle)
+        this.video_ctx.clearRect(0, 0, canvas.width, canvas.height);
+        window.cancelAnimationFrame(Renderer.frame_handle);
+        console.log("Stopping");
+    },
+    set_visualiser(name) {
+        let v = Visualisers[name];
+        if (v != undefined && v != null) {
+            this.visualiser = v;
+            this.play();
+            console.info(`Changing visualiser to ${name}`);
+        } else {
+            this.visualiser = null;
+            this.stop();
+            console.info("Turning off visualiser");
+        }
     },
     init_video() {
         // Get the canvas.
@@ -190,30 +192,27 @@ const Renderer = {
 
         // Create our data buffer.
         this.freq_data_buffer = new Uint8Array(this.analyser.frequencyBinCount);
-
-        console.log(this.analyser);
     },
     frame_callback() {
         // Draw our frame.
-        Renderer.tick();
-
-        // Get a render frame.
-        Renderer.anim_frame_handle = window.requestAnimationFrame(Renderer.frame_callback);
+        if (Renderer.tick()) {
+            // Looks like it's OK to render another frame.
+            Renderer.frame_handle = window.requestAnimationFrame(Renderer.frame_callback);
+        }
     },
     tick() {
         // Bail if there's not audio, video or visualiser.
         if (this.analyser == null) {
-            console.log(this.analyser);
             console.warn("Audio has not been initialised.");
-            return;
+            return false;
         }
-        if (this.visualisers == null || this.visualisers.length == 0) {
-            console.warn("No Visualiser to animate.");
-            return;
+        if (this.visualiser == null) {
+            console.warn("No Visualiser to render");
+            return false;
         }
         if (this.video_ctx == null) {
             console.warn("Video has not been initialised.");
-            return;
+            return false;
         }
 
         // Only slightly clear the screen.
@@ -254,10 +253,9 @@ const Renderer = {
         intensity = Math.pow(intensity, 2);
 
         // Draw the visualiser.
-        for (let i = 0; i < this.visualisers.length; i++) {
-            this.visualisers[i].draw(this.video_ctx, this.freq_data_buffer, intensity);
+        this.visualiser.draw(this.video_ctx, this.freq_data_buffer, intensity);
 
-        }
+        return true;
     },
 }
 

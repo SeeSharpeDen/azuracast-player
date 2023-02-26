@@ -14,19 +14,23 @@ body {
 }
 
 .player {
-    margin: 1em;
     display: flex;
 }
 
 .player .album-art {
     width: 200px;
     height: auto;
-    border-radius: 1em 0 0 1em;
+    border-radius: var(--gap) 0 0 var(--gap);
     overflow: hidden;
+    margin: calc(var(--gap) * -1);
+    margin-right: var(--gap);
+}
+
+.controls {
+    margin-bottom: calc(var(--gap) * -1);
 }
 
 .player .stack {
-    margin: 1em;
     min-width: 300px;
     display: flex;
     flex-direction: column;

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" xmlns:bx="https://boxy-svg.com">
   <defs>
     <view id="play" viewBox="140 0 120 120">
       <title>Play</title>
@@ -9,6 +9,9 @@
     </view>
     <view id="volume" viewBox="420 0 120 120">
       <title>volume</title>
+    </view>
+    <view id="settings" viewBox="560 0 120 120">
+      <title>settings</title>
     </view>
   </defs>
   <path d="M 166.716 10 L 233.284 60 L 166.716 110 L 166.716 10 Z" style="alignment-baseline: initial; stroke-miterlimit: 5; stroke-width: 5px; stroke-linejoin: round; stroke-linecap: round; fill: none; stroke: rgb(255, 255, 255);"/>
@@ -20,4 +23,5 @@
   <path style="fill: none; stroke-linecap: round; stroke-width: 5px; stroke: rgb(255, 255, 255);" d="M 515 15 C 535 31.875 535 88.125 515 105"/>
   <path style="fill: rgb(216, 216, 216); stroke-linecap: round; stroke-width: 6px; stroke: rgb(255, 255, 255);" d="M 110 10 L 10 110"/>
   <path style="fill: rgb(216, 216, 216); stroke-linecap: round; stroke-width: 6px; stroke: rgb(255, 255, 255);" d="M 110 110 L 10 10" transform="matrix(-1, 0, 0, -1, 120, 120)"/>
+  <path style="fill: none; stroke: rgb(255, 255, 255); stroke-linecap: round; stroke-width: 18.6585px; stroke-linejoin: round;" transform="matrix(0.267975, 0, 0, 0.267975, 405.486023, -103.59874)" d="M 764.489 419 L 836.511 419 L 846.819 478.602 A 139.795 139.795 0 0 1 891.568 504.437 L 948.338 483.563 L 984.349 545.937 L 937.887 584.665 A 139.795 139.795 0 0 1 937.887 636.335 L 984.349 675.063 L 948.338 737.437 L 891.568 716.563 A 139.795 139.795 0 0 1 846.819 742.398 L 836.511 802 L 764.489 802 L 754.181 742.398 A 139.795 139.795 0 0 1 709.432 716.563 L 652.662 737.437 L 616.651 675.063 L 663.113 636.335 A 139.795 139.795 0 0 1 663.113 584.665 L 616.651 545.937 L 652.662 483.563 L 709.432 504.437 A 139.795 139.795 0 0 1 754.181 478.602 Z M 800.5 533.9 A 76.6 76.6 0 0 0 800.5 687.1 A 76.6 76.6 0 0 0 800.5 533.9" bx:shape="cog 800.5 610.5 76.6 139.795 191.5 0.29 6 1@04d4e240"/>
 </svg>

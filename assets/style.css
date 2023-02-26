@@ -3,6 +3,8 @@ body {
     height: 100vh;
     color: rgb(210, 207, 219);
     font-family: sans-serif;
+
+    --gap: 1em;
 }
 
 .header-logo {
@@ -15,21 +17,18 @@ body {
     opacity: 100%;
 }
 
+.stack {
+    display: flex;
+    flex-direction: column;
+}
 
-.player,
-.debug-menu {
-    border-radius: 1em;
-    padding: 0;
-    display: block;
+.box {
+    border-radius: var(--gap);
+    padding: var(--gap);
+    margin: var(--gap);
     background-color: #95959524;
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
-}
-
-.debug-menu .stack {
-    display: flex;
-    flex-direction: column;
-    margin: 1em;
 }
 
 .player .blurb {
@@ -67,11 +66,29 @@ body {
     align-items: center;
 }
 
-button,
+.controls>* {
+    margin: var(--gap);
+}
+
+.controls button:first-child,
+.controls span:first-child {
+    margin-left: 0;
+}
+
+.controls button:last-child,
+.controls span:last-child {
+    margin-right: 0;
+}
+
+.controls img {
+    height: 36px;
+}
+
+.controls button,
 .volume img,
 input[type=range] {
     display: block;
-    /* border: none; */
+    border: none;
     background-color: inherit;
     color: inherit;
     opacity: 0.5;
@@ -79,38 +96,29 @@ input[type=range] {
     margin: 0;
 }
 
-button {
-    border: none;
-}
-
-.controls span img,
-button img {
-    height: 36px;
-}
-
-button:hover,
-button:focus,
-input[type=range]:hover,
-input[type=range]:focus {
+.controls button:hover,
+.controls button:focus,
+.controls input[type=range]:hover,
+.controls input[type=range]:focus {
     opacity: 1;
 }
 
-input[type=range] {
+.controls input[type=range] {
     -webkit-appearance: none;
     height: 0;
-    margin: 1em 0;
+    margin: var(--gap) 0;
     opacity: inherit;
     border: 2px solid rgba(210, 207, 219, 0.2);
     border-radius: 4px;
 }
 
-input[type=range]::before {
+.controls input[type=range]::before {
     border: 2px solid rgb(210, 207, 219);
     display: block;
     width: 100%;
 }
 
-input[type=range]::-webkit-slider-thumb {
+.controls input[type=range]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
     width: 10px;
@@ -122,7 +130,7 @@ input[type=range]::-webkit-slider-thumb {
     /* background-image: url("./music-controls.svg#volume"); */
 }
 
-input[type=range]::-moz-range-thumb {
+.controls input[type=range]::-moz-range-thumb {
     -webkit-appearance: none;
     appearance: none;
     width: 10px;
