@@ -46,11 +46,6 @@ body {
     width: 100%;
 }
 
-.player #track-name,
-.player #artist-name {
-    text-transform: capitalize;
-}
-
 .player h2,
 .player p {
     margin: 0.2rem 0;

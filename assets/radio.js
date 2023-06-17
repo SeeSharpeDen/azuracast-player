@@ -174,6 +174,15 @@ const Radio = {
 
             // Update the Media Session's metadata.
             if ("mediaSession" in navigator) {
+
+                // Get the extension of the song's art.
+                let extension = get_url_extension(song.art);
+                // Change the extension if it's jpg to jpeg for mime conversion.
+                if (extension == "jpg") {
+                    extension = "jpeg"
+                }
+
+                // Set the metadata.
                 navigator.mediaSession.metadata = new MediaMetadata({
                     title: song.title,
                     artist: song.artist,
@@ -181,6 +190,7 @@ const Radio = {
                     artwork: [
                         {
                             src: song.art,
+                            type: `image/${extension}`
                         }
                     ]
                 })
@@ -190,8 +200,10 @@ const Radio = {
 };
 
 function capitalize(text) {
+    if (typeof text != 'string')
+        return;
     // If the first character is capital, just return out.
-    if (text[0] == text[0].toUpperCase())
+    if (text.charAt(0) == text.charAt(0).toUpperCase())
         return text;
 
     // Replace the first character of each word with the capital equivalent.
@@ -199,5 +211,12 @@ function capitalize(text) {
     // https://stackoverflow.com/questions/5956942/is-there-a-js-equivalent-to-css-text-transform-capitalize/5957014#5957014
     return text.replace(/\b\w/g, function (m) { return m.toUpperCase(); });
 }
+
+// Yoink! Stack Bashing at it's finest. Cheers T.Todua 🍻.
+// https://stackoverflow.com/questions/6997262/how-to-pull-url-file-extension-out-of-url-string-using-javascript/47767860#47767860
+function get_url_extension(url) {
+    return url.split(/[#?]/)[0].split('.').pop().trim();
+}
+
 
 Radio.init();
