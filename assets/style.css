@@ -1,25 +1,49 @@
 body {
     background-color: #050505;
+    background-image: url("./graphics/stardust.png");
     height: 100vh;
     color: rgb(210, 207, 219);
     font-family: sans-serif;
 
     --gap: 1em;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: end;
+
+    animation: bg-scroll 600s infinite;
+
+    background-position: center;
 }
 
-.header-logo {
-    width: 150px;
+#stage {
+    flex-grow: 1;
+    position: relative;
+}
+
+#stage .logo {
     opacity: 70%;
-    transition: opacity 0.25s;
+
+    position: absolute;
+    display: block;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 70%;
+    max-height: 40%;
 }
 
-.header-logo:hover {
-    opacity: 100%;
+#stage canvas {
+    position: absolute;
+    display: block;
+    width: 100%;
+    height: 100%;
 }
 
 .stack {
     display: flex;
     flex-direction: column;
+    flex-grow: 1;
 }
 
 .box {
@@ -27,38 +51,60 @@ body {
     padding: var(--gap);
     margin: var(--gap);
     background-color: #95959524;
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
 }
 
-.player .blurb {
+#player {
+    margin-top: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+#player .blurb {
     font-style: italic;
     font-size: 0.8em;
     opacity: 0.5;
 }
 
-.player .album-art {
-    width: 450px;
+#player .album-art {
     aspect-ratio: 1;
+    /* width: 200px; */
+    height: auto;
+    border-radius: var(--gap) var(--gap) 0 0;
+    overflow: hidden;
+    margin: calc(var(--gap) * -1);
+    margin-bottom: var(--gap);
 }
 
 .album-art img {
     width: 100%;
 }
 
-.player h2,
-.player p {
+#player h2,
+#player p {
     margin: 0.2rem 0;
 }
 
-.player .stack {
+#player .stack {
     margin: 0 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.volume {
+    display: flex;
+}
+
+.volume input {
+    min-width: 0;
+    width: 100%;
 }
 
 .controls {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: calc(var(--gap) * -1);
 }
 
 .controls>* {
@@ -138,16 +184,12 @@ input[type=range] {
 }
 
 canvas {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
     z-index: -100;
     -webkit-animation: filter-animation 60s infinite;
     animation: filter-animation 60s infinite;
 }
 
+/* Change the hue of the canvas over time */
 @-webkit-keyframes filter-animation {
     0% {
         -webkit-filter: hue-rotate(0deg);
@@ -191,3 +233,54 @@ canvas {
         filter: hue-rotate(360deg);
     }
 }
+
+@keyframes bg-scroll {
+    0% {
+        background-position: 0% 0%;
+    }
+    20% {
+        background-position: 100% 50%;
+    }
+    40% {
+        background-position: 0% 100%;
+    }
+    60% {
+        background-position: 50% 0%;
+    }
+    80% {
+        background-position: 100% 100%;
+    }
+}
+
+/* Desktop devices. " */
+@media (min-width: 670px) {
+    #player {
+        flex-direction: row;
+        min-width: 670px;
+    }
+
+    #player .album-art {
+        /* margin: calc(var(--gap) * -1); */
+        width: 200px;
+        margin-right: var(--gap);
+        margin-bottom: calc(var(--gap) * -1);
+        border-radius: var(--gap) 0 0 var(--gap);
+    }
+}
+
+@media (min-width: 1200px) {
+    #player {
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+
+        align-self: baseline;
+        position: absolute;
+    }
+
+    #stage {}
+}
+
+/* Portrait displays */
+/* @media screen (max-aspect-ratio: 1/1) {
+
+} */

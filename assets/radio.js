@@ -75,9 +75,9 @@ const Radio = {
 
         // Change the header logo juuuuussssttt for 'ninajs'
         if (station_shortcode == "ninajs") {
-            document.querySelector("a img.header-logo").src = "./assets/graphics/tomify.png";
+            document.querySelector("#stage img.logo").src = "./assets/graphics/tomify.png";
         } else {
-            document.querySelector("a img.header-logo").src = "https://cdn.virial.xyz/7r9cmCZm/logofull.png";
+            document.querySelector("#stage img.logo").src = "https://cdn.virial.xyz/7r9cmCZm/logofull.png";
         }
 
         // Get the station.

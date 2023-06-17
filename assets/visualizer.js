@@ -5,7 +5,7 @@
 // The main visualiser.
 const Visualisers = {
     RadialWave: {
-        radius: 200,
+        radius_scale: 0.65,
         radius_margin: 170,
         revolutions: 1,
         rotate_speed: 0.08,
@@ -15,16 +15,17 @@ const Visualisers = {
         line_width: 3,
         radius_intensity: 40,
         draw(ctx, samples_data, intensity) {
-            let samples = Math.round(samples_data.length * 0.6);
+
+            const samples = Math.round(samples_data.length * 0.6);
 
             // Get the middle of the canvas.
-            let middle_x = canvas.width / 2;
-            let middle_y = canvas.height / 2;
+            const middle_x = canvas.width / 2;
+            const middle_y = canvas.height / 2;
 
-            let radius = this.radius + (intensity * this.radius_intensity);
+            const radius = Math.min(middle_x, middle_y) * this.radius_scale + (intensity * this.radius_intensity);
 
             // Create our gradient.
-            var gradient = ctx.createRadialGradient(middle_x, middle_y, radius - this.line_width * 4, middle_x, middle_y, radius + this.radius_margin);
+            const gradient = ctx.createRadialGradient(middle_x, middle_y, radius - this.line_width * 4, middle_x, middle_y, radius + this.radius_margin);
             gradient.addColorStop(0, "#000000");
             gradient.addColorStop(0.05, "#ff0000");
             // gradient.addColorStop(0.5, "#ff0000");
@@ -162,11 +163,11 @@ const Renderer = {
     init_video() {
         // Get the canvas.
         var canvas = document.getElementById("canvas");
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
 
         // Get the canvas context.
         this.video_ctx = canvas.getContext("2d");
+
+        resize_canvas();
 
         // Reset the time.
         this.time = 0.0;
@@ -284,8 +285,9 @@ function setResizeHandler(callback, timeout) {
 }
 
 function resize_canvas() {
-    console.log("Resizing canvas.");
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    let parent_rect = canvas.parentNode.getBoundingClientRect();
+    canvas.width = parent_rect.width;
+    canvas.height = parent_rect.height;
+    console.log(canvas);
 }
 setResizeHandler(resize_canvas, 350);
