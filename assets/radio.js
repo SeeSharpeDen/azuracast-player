@@ -22,7 +22,7 @@ const Radio = {
             document.querySelector(".controls .play-icon").removeAttribute("hidden");
             document.querySelector(".controls .pause-icon").setAttribute("hidden", "");
         });
-
+        
         // Set the volume of the audio to the value of the slider.
         this.audio.volume = document.getElementById("volume-slider").value / 100
 
@@ -71,13 +71,6 @@ const Radio = {
         if (this.station_shortcode == station_shortcode) {
             console.warn("Station has not changed. Not going to change.");
             return;
-        }
-
-        // Change the header logo juuuuussssttt for 'ninajs'
-        if (station_shortcode == "ninajs") {
-            document.querySelector("#stage img.logo").src = "./assets/graphics/tomify.png";
-        } else {
-            document.querySelector("#stage img.logo").src = "https://cdn.virial.xyz/7r9cmCZm/logofull.png";
         }
 
         // Get the station.
