@@ -26,6 +26,19 @@ const Radio = {
         // Set the volume of the audio to the value of the slider.
         this.audio.volume = document.getElementById("volume-slider").value / 100
 
+        // Setup the media session events.
+        if ("mediaSession" in navigator) {
+            navigator.mediaSession.setActionHandler("play", () => {
+                this.play();
+            })
+            navigator.mediaSession.setActionHandler("pause", () => {
+                this.pause();
+            })
+            navigator.mediaSession.setActionHandler("stop", () => {
+                this.stop();
+            })
+        }
+
         // Download information from the API
         fetch(`${radio_server}/api/stations`).then((response) => response.json()).then((stations) => {
             this.stations = stations;
@@ -98,13 +111,29 @@ const Radio = {
     // Toggle between pause and play.
     toggle() {
         if (!this.audio.paused) {
-            this.audio.pause();
+            this.pause();
         } else {
-            this.audio.play();
-            if (Renderer != null) {
-                Renderer.play();
-            }
+            this.play();
         }
+    },
+
+    // Play the music and visualiser.
+    play() {
+        this.audio.play();
+
+        if (Renderer != null) {
+            Renderer.play();
+        }
+    },
+
+    // Pause the music.
+    pause() {
+        this.audio.pause();
+    },
+
+    // Stop the music.
+    stop() {
+        this.audio.stop();
     },
 
     // Set the volume.
@@ -116,7 +145,6 @@ const Radio = {
     // Download the current song details.
     getDetail(shortcode) {
         fetch(`${radio_server}/api/live/nowplaying/${shortcode}`).then((response) => response.json()).then((data) => {
-
             // Update the live listener counter.
             if (data.listeners.current == 0) {
                 document.querySelector("#listeners").innerText = "nobody";
@@ -134,11 +162,42 @@ const Radio = {
             // Keep track of this to know when something different is being played.
             Radio.sh_id = data.now_playing.sh_id;
 
-            document.querySelector(".album-art img").src = data.now_playing.song.art;
-            document.querySelector("#track-name").innerText = data.now_playing.song.title;
-            document.querySelector("#artist-name").innerText = data.now_playing.song.artist;
+            let song = data.now_playing.song;
+
+            song.title = capitalize(song.title);
+            song.artist = capitalize(song.artist);
+            song.album = capitalize(song.album);
+
+            document.querySelector(".album-art img").src = song.art;
+            document.querySelector("#track-name").innerText = song.title;
+            document.querySelector("#artist-name").innerText = song.artist;
+
+            // Update the Media Session's metadata.
+            if ("mediaSession" in navigator) {
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: song.title,
+                    artist: song.artist,
+                    album: song.album,
+                    artwork: [
+                        {
+                            src: song.art,
+                        }
+                    ]
+                })
+            }
         });
     }
 };
+
+function capitalize(text) {
+    // If the first character is capital, just return out.
+    if (text[0] == text[0].toUpperCase())
+        return text;
+
+    // Replace the first character of each word with the capital equivalent.
+    // Yoink! Stack Bashing at it's finest. Cheers Nicole 🍻.
+    // https://stackoverflow.com/questions/5956942/is-there-a-js-equivalent-to-css-text-transform-capitalize/5957014#5957014
+    return text.replace(/\b\w/g, function (m) { return m.toUpperCase(); });
+}
 
 Radio.init();
