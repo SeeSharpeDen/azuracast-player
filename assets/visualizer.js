@@ -9,11 +9,10 @@ const Visualisers = {
         radius_margin: 170,
         revolutions: 1,
         rotate_speed: 0.08,
-        power: 1.7,
-        scale: 0.4,
-        volume_scale: 1,
+        power: 1.5,
+        scale: 0.8,
         line_width: 3,
-        radius_intensity: 40,
+        radius_intensity: 60,
         draw(ctx, samples_data, intensity) {
 
             const samples = Math.round(samples_data.length * 0.6);
@@ -46,10 +45,9 @@ const Visualisers = {
                     value = samples_data[i] / 256.0;
                 }
                 value = Math.pow(value, this.power);
+                
                 // Scale our value.
                 value *= this.scale;
-                // Compensate for the volume slider.
-                value *= Math.max(1.0 / this.volume_scale, 2.0);
 
                 // How many steps are there?
                 let t = (i * 0.5) / samples;
@@ -119,9 +117,10 @@ const Visualisers = {
 // The actual renderer.
 const Renderer = {
     // An array of visualisers to use.
-    visualiser: Visualisers.RadialWave,
+    visualiser: null,
     analyser: null,
     video_ctx: null,
+    canvas: null,
     time: 0.0,
     last_time: null,
     freq_data_buffer: null,
@@ -149,12 +148,24 @@ const Renderer = {
         console.log("Stopping");
     },
     set_visualiser(name) {
-        let v = Visualisers[name];
-        if (v != undefined && v != null) {
-            this.visualiser = v;
+        console.info(`Changing visualiser to ${name}`);
+
+        let new_v = Visualisers[name];
+        if (new_v != undefined && new_v != null) {
+            
+            // Remove the old visualizer class from the canvas element.
+            if (this.visualiser != null) {
+                this.canvas.classList.remove(this.visualiser.class_name);
+            }
+
+            // Set our new visualizer and add it's class to the canvas element.
+            this.visualiser = new_v;
+            this.canvas.classList.add(this.visualiser.class_name);
+
+            // Play the visualizer.
             this.play();
-            console.info(`Changing visualiser to ${name}`);
         } else {
+            // We found no visualizer, just stop.
             this.visualiser = null;
             this.stop();
             console.info("Turning off visualiser");
@@ -162,7 +173,7 @@ const Renderer = {
     },
     init_video() {
         // Get the canvas.
-        var canvas = document.getElementById("canvas");
+        this.canvas = document.getElementById("canvas");
 
         // Get the canvas context.
         this.video_ctx = canvas.getContext("2d");
@@ -171,25 +182,25 @@ const Renderer = {
 
         // Reset the time.
         this.time = 0.0;
+
+        Object.keys(Visualisers).forEach(key => {
+            console.log(`Visualizer ${key}`);
+            Visualisers[key].class_name = key.toString();
+        });
+
+        this.set_visualiser("RadialWave")
     },
     init_audio() {
         // Create the audio context and audio source.
-        let audio_ctx = new (window.AudioContext || window.webkitAudioContext)();
-        let audio_source = audio_ctx.createMediaElementSource(Radio.audio);
-
-        // Create our audio analyser.
-        this.analyser = audio_ctx.createAnalyser();
-        this.analyser.smoothingTimeConstant = 0.775;
-        // this.analyser.smoothingTimeConstant = 0.95;
+        this.analyser = Radio.audio.ctx.createAnalyser();
+        Radio.audio.source.connect(this.analyser);
+        
+        this.analyser.smoothingTimeConstant = 0.8;
 
         // this.analyser.fftSize = 512;
         this.analyser.fftSize = 2048;
         this.analyser.minDecibels = -70;
         this.analyser.maxDecibels = -20;
-
-        // Connect our analyser to the audio.
-        audio_source.connect(this.analyser);
-        this.analyser.connect(audio_ctx.destination);
 
         // Create our data buffer.
         this.freq_data_buffer = new Uint8Array(this.analyser.frequencyBinCount);
@@ -216,9 +227,6 @@ const Renderer = {
             return false;
         }
 
-        // Only slightly clear the screen.
-        // this.video_ctx.fillStyle = "rgba(0,0,0,0.2)";
-        // this.video_ctx.fillRect(0, 0, canvas.width, canvas.height);
         this.video_ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         // Get the delta time.
@@ -249,8 +257,6 @@ const Renderer = {
         intensity = intensity / gaussian_total;
 
         // Added for extra affect.
-        // intensity = Math.exp(intensity);
-        // intensity = Math.sqrt(intensity);
         intensity = Math.pow(intensity, 2);
 
         // Draw the visualiser.

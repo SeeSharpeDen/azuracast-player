@@ -1,30 +1,56 @@
 let radio_server = "https://server1.wingless.cc:2087";
 
 const Radio = {
-    audio: null,
+    audio: {
+        ctx: null,
+        element: null,
+        source: null,
+        gain: null,
+    },
     sh_id: NaN,
     stations: null,
     station_shortcode: null,
     interval_handle: 0,
 
+    init_audio() {
+
+        console.log("Initialising Audio.");
+        
+        let ctx = new (window.AudioContext || window.webkitAudioContext)();
+        let element = new Audio();
+        element.crossOrigin = "anonymous";
+        let source = ctx.createMediaElementSource(element);
+        let gain = ctx.createGain();
+
+        source.connect(gain);
+        gain.connect(ctx.destination);
+
+        this.audio = {
+            ctx: ctx,
+            element: element,
+            source: source,
+            gain: gain,
+        };
+    },
+
     init() {
-        // Create our audio source.
-        this.audio = new Audio();
-        this.audio.crossOrigin = "anonymous";
+        if (this.audio.ctx == null) {
+            this.init_audio();
+        }
 
         // When the audio play event is fired swap the icons around for the play button.
-        this.audio.addEventListener("play", () => {
+        this.audio.element.addEventListener("play", () => {
             document.querySelector(".controls .play-icon").setAttribute("hidden", "");
             document.querySelector(".controls .pause-icon").removeAttribute("hidden");
         });
         // When the audio pause event is fired swap the icons around for the play button.
-        this.audio.addEventListener("pause", () => {
+        this.audio.element.addEventListener("pause", () => {
             document.querySelector(".controls .play-icon").removeAttribute("hidden");
             document.querySelector(".controls .pause-icon").setAttribute("hidden", "");
         });
-        
+
         // Set the volume of the audio to the value of the slider.
-        this.audio.volume = document.getElementById("volume-slider").value / 100
+        this.setVolume(document.getElementById("volume-slider").value / 100);
 
         // Setup the media session events.
         if ("mediaSession" in navigator) {
@@ -84,7 +110,7 @@ const Radio = {
         this.station_shortcode = station_shortcode;
 
         // Update the audio and interface.
-        this.audio.src = station.listen_url;
+        this.audio.element.src = station.listen_url;
         document.querySelector(".controls .play-icon").removeAttribute("hidden");
         document.querySelector(".controls .pause-icon").setAttribute("hidden", "");
 
@@ -103,7 +129,8 @@ const Radio = {
 
     // Toggle between pause and play.
     toggle() {
-        if (!this.audio.paused) {
+        this.audio_ctx
+        if (!this.audio.element.paused) {
             this.pause();
         } else {
             this.play();
@@ -112,7 +139,7 @@ const Radio = {
 
     // Play the music and visualiser.
     play() {
-        this.audio.play();
+        this.audio.element.play();
 
         if (Renderer != null) {
             Renderer.play();
@@ -121,18 +148,18 @@ const Radio = {
 
     // Pause the music.
     pause() {
-        this.audio.pause();
+        this.audio.element.pause();
     },
 
     // Stop the music.
     stop() {
-        this.audio.stop();
+        this.audio.element.stop();
     },
 
     // Set the volume.
     setVolume(value) {
-        // Change the volume of the audio source.
-        this.audio.volume = value;
+        this.audio.gain.gain.value = value;
+        console.log(`Volume changed to : ${this.audio.gain.gain.value}`);
     },
 
     // Download the current song details.
