@@ -1,4 +1,4 @@
-let radio_server = "https://server1.wingless.cc:2087";
+let radio_server = "https://cast.wingless.cc";
 
 const Radio = {
     audio: {
