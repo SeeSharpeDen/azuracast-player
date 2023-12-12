@@ -13,7 +13,7 @@ const Visualisers = {
         scale: 0.8,
         line_width: 3,
         radius_intensity: 60,
-        draw(ctx, samples_data, intensity) {
+        draw(ctx, samples_data, delta_time, intensity) {
 
             const samples = Math.round(samples_data.length * 0.6);
 
@@ -76,10 +76,83 @@ const Visualisers = {
             ctx.stroke();
         }
     },
+    Starfield: {
+        stars: [],
+        star_count: 1000,
+        speed: 1000.0,
+        start_velocity: 1000.0,
+        inner_radius: 50,
+        outer_radius: 500,
+        stretch_scale: 30,
+        star_scale: 4,
+        star_size: 1,
+        pow: 4,
+        draw(ctx, samples_data, delta_time, intensity) {
+
+            let stars = this.stars;
+
+            const samples = Math.round(samples_data.length * 0.6);
+
+            let pow_intensity = Math.pow(intensity, this.pow);
+
+            // Get the middle of the canvas.
+            const middle_x = canvas.width / 2;
+            const middle_y = canvas.height / 2;
+
+            if (stars.length < samples && Math.random() < 0.5) {
+                let star = {
+                    x: middle_x,
+                    y: middle_y,
+                    vx: (-0.5 + Math.random()) * this.start_velocity,
+                    vy: (-0.5 + Math.random()) * this.start_velocity,
+                };
+                star.angle = Math.atan2(star.vy, star.vx);
+                star.speed = Math.sqrt(star.x * star.x + star.y * star.y)
+                stars.push(star);
+            }
+
+            const gradient = ctx.createRadialGradient(middle_x, middle_y, this.inner_radius, middle_x, middle_y, this.outer_radius);
+            gradient.addColorStop(0, "#FFFFFF00");
+            gradient.addColorStop(1, "#FFFFFFFF");
+
+            ctx.fillStyle = gradient;
+            // ctx.fillStyle = "#ffffff";
+
+            for (let n = 0; n < stars.length; n++) {
+                const i = n;
+                let star = stars[n];
+
+                delta_x = Math.abs(star.x - middle_x) / (canvas.width * 0.5);
+                delta_y = Math.abs(star.y - middle_y) / (canvas.height * 0.5);
+                distance_scalar = Math.sqrt(delta_x * delta_x + delta_y * delta_y);
+
+                // Move the star along it's velocity.
+                let scalar = (1.0 + distance_scalar) * (0.1 + pow_intensity);
+                let sample_scalar = samples_data[i] / 256;
+                sample_scalar *= this.star_scale;
+                star.x = star.x + star.vx * scalar * delta_time;
+                star.y = star.y + star.vy * scalar * delta_time;
+
+                if (star.x > canvas.width || star.x < 0 || star.y > canvas.height || star.y < 0) {
+                    stars[n].x = middle_x;
+                    stars[n].y = middle_y;
+                }
+
+                ctx.beginPath();
+                // ctx.arc(stars[n].x, stars[n].y, Math.abs(stars[n].y/300+n/500), 0, 2 * Math.PI);
+
+                let size = 0.1 + this.star_size * sample_scalar;
+                ctx.ellipse(star.x, star.y, 0.1 + (scalar * this.stretch_scale), size, star.angle, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+
+            this.stars = stars;
+        }
+    },
     // Just a plain jane visualiser for debugging purposes.
     Spectrum: {
         line_width: 1,
-        draw(ctx, samples_data, intensity) {
+        draw(ctx, samples_data, delta_time, intensity) {
             let samples = samples_data.length;
             let spacing = canvas.width / samples;
 
@@ -158,6 +231,8 @@ const Renderer = {
                 this.canvas.classList.remove(this.visualiser.class_name);
             }
 
+            window.localStorage.setItem("last_visualiser", name);
+
             // Set our new visualizer and add it's class to the canvas element.
             this.visualiser = new_v;
             this.canvas.classList.add(this.visualiser.class_name);
@@ -188,7 +263,18 @@ const Renderer = {
             Visualisers[key].class_name = key.toString();
         });
 
-        this.set_visualiser("RadialWave")
+        console.log(`Last value: ${document.getElementById("visualiser").value}`);
+
+        var last_visualiser = window.localStorage.getItem("last_visualiser")
+        if (last_visualiser != null && Visualisers[last_visualiser] != null) {
+            this.set_visualiser(last_visualiser);
+        }
+        else {
+            this.set_visualiser("RadialWave");
+        }
+
+        this.kill_red = document.querySelector("#kill_red");
+        this.kill_blue = document.querySelector("#kill_blue");
     },
     init_audio() {
         // Create the audio context and audio source.
@@ -231,11 +317,11 @@ const Renderer = {
 
         // Get the delta time.
         let now = Date.now();
-        let delta = (now - this.last_time) / 1000;
+        let delta_time = (now - this.last_time) / 1000;
         this.last_time = now;
 
-        if (!isNaN(delta)) {
-            this.time += delta;
+        if (!isNaN(delta_time)) {
+            this.time += delta_time;
         }
 
         // Get the audio spectrum data.
@@ -260,7 +346,7 @@ const Renderer = {
         intensity = Math.pow(intensity, 2);
 
         // Draw the visualiser.
-        this.visualiser.draw(this.video_ctx, this.freq_data_buffer, intensity);
+        this.visualiser.draw(this.video_ctx, this.freq_data_buffer, delta_time, intensity);
 
         return true;
     },
