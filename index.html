@@ -15,8 +15,25 @@
 <body>
 
     <div id="stage">
-        <img class="logo" src="https://cdn.virial.xyz/7r9cmCZm/logofull.png">
+        <img class="logo kill" src="assets/graphics/branding/ssd_radio_s_masked.png">
         <canvas id="canvas"></canvas>
+        <svg width="0" height="0">
+            <filter id="kill">
+                <feColorMatrix type="matrix" result="red_" values="2 0 0 0 0
+                        0 0 0 0 0 
+                        0 0 0 0 0 
+                        0 0 0 1 0" />
+                <feOffset id="kill_red" in="red_" dx="3" dy="0" result="red" />
+                <feColorMatrix type="matrix" in="SourceGraphic" result="blue_" values="0 0 0 0 0
+                        0 2 0 0 0 
+                        0 1 1 1 0 
+                        0 0 0 1 0" />
+                <feOffset id="kill_blue" in="blue_" dx="-3" dy="0" result="blue" />
+                <feBlend mode="overlay" in="red" in2="blue" />
+                <feBlend mode="normal" in="SourceGraphic" />
+
+            </filter>
+        </svg>
     </div>
     <div id="player" class="box">
         <div class="album-art"><img src="https://server1.wingless.cc:2087/static/uploads/album_art.1657710906.jpg">
@@ -71,4 +88,5 @@
         document.getElementById("settings").style.display = "";
     }
 </script>
+
 </html>

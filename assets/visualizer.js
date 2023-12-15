@@ -45,7 +45,7 @@ const Visualisers = {
                     value = samples_data[i] / 256.0;
                 }
                 value = Math.pow(value, this.power);
-                
+
                 // Scale our value.
                 value *= this.scale;
 
@@ -270,6 +270,11 @@ const Renderer = {
     intensity_g_offset: 5,
     frame_handle: 0,
 
+    kill: {
+        red: null,
+        blue: null,
+    },
+
     play() {
 
         if (this.analyser == null) {
@@ -294,7 +299,7 @@ const Renderer = {
 
         let new_v = Visualisers[name];
         if (new_v != undefined && new_v != null) {
-            
+
             // Remove the old visualizer class from the canvas element.
             if (this.visualiser != null) {
                 this.canvas.classList.remove(this.visualiser.class_name);
@@ -349,7 +354,7 @@ const Renderer = {
         // Create the audio context and audio source.
         this.analyser = Radio.audio.ctx.createAnalyser();
         Radio.audio.source.connect(this.analyser);
-        
+
         this.analyser.smoothingTimeConstant = 0.8;
 
         // this.analyser.fftSize = 512;
@@ -414,6 +419,10 @@ const Renderer = {
         // Added for extra affect.
         intensity = Math.pow(intensity, 2);
 
+        if (this.kill != null) {
+            update_kill(intensity);
+        }
+
         // Draw the visualiser.
         this.visualiser.draw(this.video_ctx, this.freq_data_buffer, delta_time, intensity);
 
@@ -425,6 +434,28 @@ const Renderer = {
 // Used to filter out a section of the waveform for "intensity"/beat detection.
 function gaussian(x, width, offset) {
     return Math.exp(-Math.pow((offset - x) / width, 2));
+}
+
+function update_kill(intensity) {
+    let kill = Math.round(intensity * 8);
+    if (kill > 4) {
+        this.kill_red.setAttribute("dx", -kill);
+        this.kill_blue.setAttribute("dx", kill);
+
+        if (kill > 6) {
+            this.kill_red.setAttribute("dy", kill / 2);
+            this.kill_blue.setAttribute("dy", -kill / 2);
+        } else {
+            this.kill_red.setAttribute("dy", "0");
+            this.kill_blue.setAttribute("dy", "0");
+        }
+    } else {
+        this.kill_red.setAttribute("dx", "0");
+        this.kill_blue.setAttribute("dx", "0");
+
+        this.kill_red.setAttribute("dy", "0");
+        this.kill_blue.setAttribute("dy", "0");
+    }
 }
 
 
