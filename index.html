@@ -5,8 +5,6 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta content="https://wingless.cc/radio" property="og:url" />
-    <meta content="https://server1.wingless.cc:2087/listen/winglessradio/radio.mp3" property="og:audio" />
     <title>Wingless Radio</title>
     <link rel="stylesheet" href="./assets/normalize.css">
     <link rel="stylesheet" href="./assets/style.css">
@@ -43,8 +41,9 @@
         </div>
         <div class="stack" id="settings" style="display: none;">
             <h2>Settings</h2>
-            <label for="radio-select">Station</label>
-            <select id="radio-select" onchange="Radio.changeStation(this.value);">
+            <label for="radio-select">Audio Source</label>
+            <select id="radio-select" onchange="Player.setSource(this.value);">
+                <option value="mic">Microphone</option>
             </select>
             <label for="visualizer">Visualiser</label>
             <select id="visualiser" onchange="Renderer.set_visualiser(this.value)">
@@ -71,11 +70,15 @@
     </svg>
 </body>
 
-
 <script src="./assets/player.js"></script>
 <script src="./assets/radio.js"></script>
 <script src="./assets/visualizer.js"></script>
 <script>
+    window.addEventListener('load', function () {
+        Player.init();
+        Radio.init();
+        Renderer.init();
+    })
     function hide_settings() {
         document.getElementById("settings").style.display = "none";
         document.getElementById("settings-btn").style.display = "";

@@ -6,13 +6,13 @@
 const Visualisers = {
     RadialWave: {
         radius_scale: 0.65,
-        radius_margin: 170,
+        radius_margin: 200,
         revolutions: 1,
         rotate_speed: 0.08,
         power: 1.5,
         scale: 0.8,
         line_width: 3,
-        radius_intensity: 60,
+        radius_intensity: 40,
         draw(ctx, samples_data, delta_time, intensity) {
 
             const samples = Math.round(samples_data.length * 0.6);
@@ -275,20 +275,26 @@ const Renderer = {
         blue: null,
     },
 
-    play() {
-
-        if (this.analyser == null) {
-            console.info("Initialising Audio for the first time.");
-            this.init_audio();
-        }
-
-        if (this.video_ctx == null) {
-            console.info("Initialising Video for the first time.");
-            this.init_video();
-        }
-
-        this.frame_callback()
+    init() {
+        // this.init_audio();
+        this.init_video();
+        Renderer.frame_callback()
     },
+
+    // play() {
+
+    //     if (this.analyser == null) {
+    //         console.info("Initialising Audio for the first time.");
+    //         this.init_audio();
+    //     }
+
+    //     if (this.video_ctx == null) {
+    //         console.info("Initialising Video for the first time.");
+    //         this.init_video();
+    //     }
+
+    //     this.frame_callback()
+    // },
     stop() {
         this.video_ctx.clearRect(0, 0, canvas.width, canvas.height);
         window.cancelAnimationFrame(Renderer.frame_handle);
@@ -312,7 +318,7 @@ const Renderer = {
             this.canvas.classList.add(this.visualiser.class_name);
 
             // Play the visualizer.
-            this.play();
+            // this.play();
         } else {
             // We found no visualizer, just stop.
             this.visualiser = null;
@@ -350,40 +356,31 @@ const Renderer = {
         this.kill_red = document.querySelector("#kill_red");
         this.kill_blue = document.querySelector("#kill_blue");
     },
-    init_audio() {
+    init_audio(ctx) {
         // Create the audio context and audio source.
-        this.analyser = Player.audio.ctx.createAnalyser();
-        Player.audio.source.connect(this.analyser);
+        this.analyser = ctx.createAnalyser();
 
         this.analyser.smoothingTimeConstant = 0.8;
 
         // this.analyser.fftSize = 512;
         this.analyser.fftSize = 2048;
-        this.analyser.minDecibels = -70;
-        this.analyser.maxDecibels = -20;
+        // this.analyser.minDecibels = -90;
+        // this.analyser.maxDecibels = -20;
 
         // Create our data buffer.
         this.freq_data_buffer = new Uint8Array(this.analyser.frequencyBinCount);
     },
     frame_callback() {
         // Draw our frame.
-        if (Renderer.tick()) {
-            // Looks like it's OK to render another frame.
-            Renderer.frame_handle = window.requestAnimationFrame(Renderer.frame_callback);
-        }
+        Renderer.tick();
+        // if (Renderer.tick()) {
+        // Looks like it's OK to render another frame.
+        Renderer.frame_handle = window.requestAnimationFrame(Renderer.frame_callback);
+        // }
     },
     tick() {
         // Bail if there's not audio, video or visualiser.
-        if (this.analyser == null) {
-            console.warn("Audio has not been initialised.");
-            return false;
-        }
-        if (this.visualiser == null) {
-            console.warn("No Visualiser to render");
-            return false;
-        }
-        if (this.video_ctx == null) {
-            console.warn("Video has not been initialised.");
+        if (this.analyser == null || this.visualiser == null || this.video_ctx == null) {
             return false;
         }
 

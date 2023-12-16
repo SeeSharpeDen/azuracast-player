@@ -4,6 +4,69 @@ const Player = {
         element: null,
         source: null,
         gain: null,
+        init_mic_pipeline() {
+            if (this.ctx == null) {
+                this.ctx = new window.AudioContext({
+                    latencyHint: 'interactive'
+                });
+            }
+            // Remove the element source and gain nodes.
+            this.element = null;
+            if (this.source != null) {
+                this.source.disconnect();
+                this.source = null;
+            }
+
+
+            if (this.gain != null) {
+                this.gain.disconnect();
+                this.gain = null;
+            }
+
+            // Add our microphone nodes.
+            return navigator.mediaDevices.getUserMedia({
+                audio: {
+                    echoCancellation: false,
+                    noiseSuppression: false,
+                    autoGainControl: false,
+                    latency: 0.02
+                }
+            }).then((stream) => {
+                this.source = this.ctx.createMediaStreamSource(stream);
+
+                if (Renderer.analyser == null) {
+                    Renderer.init_audio(this.ctx);
+                }
+                this.source.connect(Renderer.analyser);
+            }).catch((err) => {
+                console.error(`Can't get Microphone. Reason: ${err}`);
+            });
+        },
+        init_element_pipeline(src_url) {
+            if (this.ctx == null) {
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            // Remove the stream source node.
+            if (this.source != null) {
+                this.source.disconnect();
+                this.source = null;
+            }
+
+            this.element = new Audio();
+            this.element.crossOrigin = "anonymous";
+            this.source = this.ctx.createMediaElementSource(this.element);
+            this.gain = this.ctx.createGain();
+
+            this.source.connect(this.gain);
+            this.gain.connect(this.ctx.destination);
+
+            this.element.src = src_url;
+
+            if (Renderer.analyser == null) {
+                Renderer.init_audio(this.ctx);
+            }
+            this.source.connect(Renderer.analyser);
+        },
     },
     controls: {
         pause_icon: null,
@@ -18,24 +81,6 @@ const Player = {
     },
 
     init() {
-        console.log("Initialising Audio.");
-
-        let ctx = new (window.AudioContext || window.webkitAudioContext)();
-        let element = new Audio();
-        element.crossOrigin = "anonymous";
-        let source = ctx.createMediaElementSource(element);
-        let gain = ctx.createGain();
-
-        source.connect(gain);
-        gain.connect(ctx.destination);
-
-        this.audio = {
-            ctx: ctx,
-            element: element,
-            source: source,
-            gain: gain,
-        };
-
         // Setup the controls.
         this.controls.pause_icon = document.querySelector(".controls .play-icon");
         this.controls.play_icon = document.querySelector(".controls .pause-icon");
@@ -44,16 +89,18 @@ const Player = {
         // Set the volume of the audio to the value of the slider.
         this.setVolume(this.controls.volume_slider.value / 100);
 
-        // When the audio play event is fired swap the icons around for the play button.
-        element.addEventListener("play", () => {
-            this.controls.play_icon.setAttribute("hidden", "");
-            this.controls.pause_icon.removeAttribute("hidden");
-        });
-        // When the audio pause event is fired swap the icons around for the play button.
-        element.addEventListener("pause", () => {
-            this.controls.play_icon.removeAttribute("hidden");
-            this.controls.pause_icon.setAttribute("hidden", "");
-        });
+        // // When the audio play event is fired swap the icons around for the play button.
+        // element.addEventListener("play", () => {
+        //     this.controls.play_icon.setAttribute("hidden", "");
+        //     this.controls.pause_icon.removeAttribute("hidden");
+        // });
+        // // When the audio pause event is fired swap the icons around for the play button.
+        // element.addEventListener("pause", () => {
+        //     this.controls.play_icon.removeAttribute("hidden");
+        //     this.controls.pause_icon.setAttribute("hidden", "");
+        // });
+
+        // this.setSource("mic");
 
         // Setup the details.
         this.details.album_art = document.querySelector(".album-art img");
@@ -85,35 +132,46 @@ const Player = {
 
     // Play the music and renderer if one exists.
     play() {
-        this.audio.element.play();
-
-        if (Renderer != null) {
-            Renderer.play();
+        if (this.audio.element != null) {
+            this.audio.element.play();
         }
     },
 
     // Pause the music.
     pause() {
-        this.audio.element.pause();
+        if (this.audio.element != null) {
+            this.audio.element.pause();
+        }
     },
 
     // Stop the music and renderer if one exists.
     stop() {
-        this.audio.element.stop();
-
-        if (Renderer != null) {
-            Renderer.play();
+        if (this.audio.element != null) {
+            this.audio.element.stop();
         }
     },
 
     // Set the volume of the audio.
     setVolume(value) {
-        this.audio.gain.gain.value = value;
+        if (this.audio.gain != null) {
+            this.audio.gain.gain.value = value;
+        }
     },
+    setSource(source) {
+        // If the source is a radio, use that.
+        if (source.startsWith("radio.")) {
+            let src_url = Radio.setStation(source.substr(6));
+            this.audio.init_element_pipeline(src_url);
+            return;
+        } else {
+            // Clear the radio (and stop hitting the API)
+            Radio.setStation(null);
+        }
 
-    // Set the src of the audio element.
-    setSrc(source) {
-        this.audio.element.src = source;
+        if (source == "mic") {
+            this.audio.init_mic_pipeline();
+            return;
+        }
     },
 
     // Set the track details of the player and mediaSession.
@@ -148,5 +206,3 @@ const Player = {
         }
     }
 }
-
-Player.init();

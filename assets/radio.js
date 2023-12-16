@@ -3,7 +3,7 @@ const Radio = {
     sh_id: NaN,
     stations: null,
     station_shortcode: null,
-    interval_handle: 0,
+    interval_handle: NaN,
 
     init() {
         // Download information from the API
@@ -12,32 +12,25 @@ const Radio = {
             // Update the drop down box in the settings and change to the first viable station.
             let select = document.getElementById("radio-select");
             if (stations.length > 0) {
-                select.removeChild(select.firstChild);
                 stations.forEach(stn => {
                     if (stn.mounts.length > 0) {
-
-                        // Change to the first viable station.
-                        if (this.station_shortcode == null) {
-                            this.changeStation(stn.shortcode);
-                        }
-
                         // Add the station to the drop down box.
                         const optionNode = document.createElement("option");
-                        optionNode.value = stn.shortcode;
+                        optionNode.value = `radio.${stn.shortcode}`;
                         const textNode = document.createTextNode(stn.name);
                         optionNode.appendChild(textNode);
                         select.appendChild(optionNode);
                     }
                 });
             }
+            Player.setSource("radio.winglessradio");
         });
     },
 
-    changeStation(station_shortcode) {
-        // Only change stations if we need to.
-        if (this.station_shortcode == station_shortcode) {
-            console.warn("Station has not changed. Not going to change.");
-            return;
+    setStation(station_shortcode) {
+        // Clear the old interval.
+        if (this.interval_handle != NaN) {
+            clearInterval(this.interval_handle);
         }
 
         // Get the station.
@@ -47,20 +40,28 @@ const Radio = {
                 station = stn;
             }
         });
-        console.info(`Changing to station: ${station.shortcode}`);
-        this.station_shortcode = station_shortcode;
 
-        Player.setSrc(station.listen_url);
+        // If we have a station, change to it.
+        if (station != null) {
+            console.info(`Changing to station: ${station.shortcode}`);
+            this.station_shortcode = station_shortcode;
 
-        // Clear the old interval.
-        clearInterval(this.interval_handle);
-        // Immediately download the details about the radio station.
-        this.getDetail(station_shortcode);
+            // Player.setSrc(station.listen_url);
+            // Immediately download the details about the radio station.
+            this.getDetail(station_shortcode);
 
-        // Then every 5 seconds also download the details.
-        this.interval_handle = setInterval(() => {
-            Radio.getDetail(station_shortcode);
-        }, 5000);
+            // Then every 5 seconds also download the details.
+            this.interval_handle = setInterval(() => {
+                Radio.getDetail(station_shortcode);
+            }, 5000);
+
+            console.log(station.listen_url);
+            return station.listen_url;
+        } else {
+            console.info("Changed to no station.")
+        }
+
+        return null;
     },
 
     // Download the current song details.
@@ -89,7 +90,6 @@ const Radio = {
         });
     }
 };
-Radio.init();
 
 function capitalize(text) {
     if (typeof text != 'string')
