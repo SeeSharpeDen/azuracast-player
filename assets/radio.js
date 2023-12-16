@@ -1,72 +1,13 @@
-let radio_server = "https://cast.wingless.cc";
-
 const Radio = {
-    audio: {
-        ctx: null,
-        element: null,
-        source: null,
-        gain: null,
-    },
+    server: "https://cast.wingless.cc",
     sh_id: NaN,
     stations: null,
     station_shortcode: null,
     interval_handle: 0,
 
-    init_audio() {
-
-        console.log("Initialising Audio.");
-        
-        let ctx = new (window.AudioContext || window.webkitAudioContext)();
-        let element = new Audio();
-        element.crossOrigin = "anonymous";
-        let source = ctx.createMediaElementSource(element);
-        let gain = ctx.createGain();
-
-        source.connect(gain);
-        gain.connect(ctx.destination);
-
-        this.audio = {
-            ctx: ctx,
-            element: element,
-            source: source,
-            gain: gain,
-        };
-    },
-
     init() {
-        if (this.audio.ctx == null) {
-            this.init_audio();
-        }
-
-        // When the audio play event is fired swap the icons around for the play button.
-        this.audio.element.addEventListener("play", () => {
-            document.querySelector(".controls .play-icon").setAttribute("hidden", "");
-            document.querySelector(".controls .pause-icon").removeAttribute("hidden");
-        });
-        // When the audio pause event is fired swap the icons around for the play button.
-        this.audio.element.addEventListener("pause", () => {
-            document.querySelector(".controls .play-icon").removeAttribute("hidden");
-            document.querySelector(".controls .pause-icon").setAttribute("hidden", "");
-        });
-
-        // Set the volume of the audio to the value of the slider.
-        this.setVolume(document.getElementById("volume-slider").value / 100);
-
-        // Setup the media session events.
-        if ("mediaSession" in navigator) {
-            navigator.mediaSession.setActionHandler("play", () => {
-                this.play();
-            })
-            navigator.mediaSession.setActionHandler("pause", () => {
-                this.pause();
-            })
-            navigator.mediaSession.setActionHandler("stop", () => {
-                this.stop();
-            })
-        }
-
         // Download information from the API
-        fetch(`${radio_server}/api/stations`).then((response) => response.json()).then((stations) => {
+        fetch(`${this.server}/api/stations`).then((response) => response.json()).then((stations) => {
             this.stations = stations;
             // Update the drop down box in the settings and change to the first viable station.
             let select = document.getElementById("radio-select");
@@ -109,17 +50,12 @@ const Radio = {
         console.info(`Changing to station: ${station.shortcode}`);
         this.station_shortcode = station_shortcode;
 
-        // Update the audio and interface.
-        this.audio.element.src = station.listen_url;
-        document.querySelector(".controls .play-icon").removeAttribute("hidden");
-        document.querySelector(".controls .pause-icon").setAttribute("hidden", "");
+        Player.setSrc(station.listen_url);
 
         // Clear the old interval.
         clearInterval(this.interval_handle);
-
         // Immediately download the details about the radio station.
         this.getDetail(station_shortcode);
-
 
         // Then every 5 seconds also download the details.
         this.interval_handle = setInterval(() => {
@@ -127,44 +63,9 @@ const Radio = {
         }, 5000);
     },
 
-    // Toggle between pause and play.
-    toggle() {
-        this.audio_ctx
-        if (!this.audio.element.paused) {
-            this.pause();
-        } else {
-            this.play();
-        }
-    },
-
-    // Play the music and visualiser.
-    play() {
-        this.audio.element.play();
-
-        if (Renderer != null) {
-            Renderer.play();
-        }
-    },
-
-    // Pause the music.
-    pause() {
-        this.audio.element.pause();
-    },
-
-    // Stop the music.
-    stop() {
-        this.audio.element.stop();
-    },
-
-    // Set the volume.
-    setVolume(value) {
-        this.audio.gain.gain.value = value;
-        console.log(`Volume changed to : ${this.audio.gain.gain.value}`);
-    },
-
     // Download the current song details.
     getDetail(shortcode) {
-        fetch(`${radio_server}/api/live/nowplaying/${shortcode}`).then((response) => response.json()).then((data) => {
+        fetch(`${this.server}/api/live/nowplaying/${shortcode}`).then((response) => response.json()).then((data) => {
             // Update the live listener counter.
             if (data.listeners.current == 0) {
                 document.querySelector("#listeners").innerText = "nobody";
@@ -182,42 +83,13 @@ const Radio = {
             // Keep track of this to know when something different is being played.
             Radio.sh_id = data.now_playing.sh_id;
 
+            // Update our player details.
             let song = data.now_playing.song;
-
-            song.title = capitalize(song.title);
-            song.artist = capitalize(song.artist);
-            song.album = capitalize(song.album);
-
-            document.querySelector(".album-art img").src = song.art;
-            document.querySelector("#track-name").innerText = song.title;
-            document.querySelector("#artist-name").innerText = song.artist;
-
-            // Update the Media Session's metadata.
-            if ("mediaSession" in navigator) {
-
-                // Get the extension of the song's art.
-                let extension = get_url_extension(song.art);
-                // Change the extension if it's jpg to jpeg for mime conversion.
-                if (extension == "jpg") {
-                    extension = "jpeg"
-                }
-
-                // Set the metadata.
-                navigator.mediaSession.metadata = new MediaMetadata({
-                    title: song.title,
-                    artist: song.artist,
-                    album: song.album,
-                    artwork: [
-                        {
-                            src: song.art,
-                            type: `image/${extension}`
-                        }
-                    ]
-                })
-            }
+            Player.setDetails(capitalize(song.title), capitalize(song.artist), capitalize(song.album), song.art);
         });
     }
 };
+Radio.init();
 
 function capitalize(text) {
     if (typeof text != 'string')
@@ -237,6 +109,3 @@ function capitalize(text) {
 function get_url_extension(url) {
     return url.split(/[#?]/)[0].split('.').pop().trim();
 }
-
-
-Radio.init();

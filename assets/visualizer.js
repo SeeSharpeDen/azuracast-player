@@ -352,8 +352,8 @@ const Renderer = {
     },
     init_audio() {
         // Create the audio context and audio source.
-        this.analyser = Radio.audio.ctx.createAnalyser();
-        Radio.audio.source.connect(this.analyser);
+        this.analyser = Player.audio.ctx.createAnalyser();
+        Player.audio.source.connect(this.analyser);
 
         this.analyser.smoothingTimeConstant = 0.8;
 
