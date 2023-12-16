@@ -26,36 +26,48 @@
             <p class="blurb">There's <span id="listeners">nobody</span> listening.</p>
             <div class="controls">
                 <button id="play-btn" onclick="Player.toggle()">
-                    <img class="play-icon" src="./assets/graphics/music-controls.svg#play" alt="⏯️">
-                    <img class="pause-icon" src="./assets/graphics/music-controls.svg#pause" alt="⏯️" hidden>
+                    <img class="icon-play" src="./assets/graphics/music-controls.svg#play" alt="⏯️">
+                    <img class="icon-pause" src="./assets/graphics/music-controls.svg#pause" alt="⏯️" hidden>
                 </button>
                 <span class="volume">
-                    <img src="./assets/graphics/music-controls.svg#volume" style="margin-right: var(--gap);">
+                    <img class="icon-volume" src="./assets/graphics/music-controls.svg#volume"
+                        style="margin-right: var(--gap);">
                     <input type="range" id="volume-slider" min="0" max="100"
                         oninput="Player.setVolume(this.value / 100)">
                 </span>
-                <button id="settings-btn" onclick="show_settings()">
-                    <img class="pause-icon" src="./assets/graphics/music-controls.svg#settings" alt="⚙️">
+                <button id="source-btn" onclick="toggle_menu('radio-menu')">
+                    <img class="icon-music" src="./assets/graphics/music-controls.svg#music" alt="♫" hidden>
+                    <img class="icon-radio" src="./assets/graphics/music-controls.svg#radio" alt="📻">
+                    <img class="icon-mic" src="./assets/graphics/music-controls.svg#mic" alt="🎤" hidden>
+                </button>
+                <button id="visualiser-btn" onclick="toggle_menu('visualiser-menu')">
+                    <img class="icond-spectrum" src="./assets/graphics/music-controls.svg#spectrum" alt="🎞">
                 </button>
             </div>
         </div>
-        <div class="stack" id="settings" style="display: none;">
-            <h2>Settings</h2>
-            <label for="radio-select">Audio Source</label>
-            <select id="radio-select" onchange="Player.setSource(this.value);">
-                <option value="mic">Microphone</option>
-            </select>
-            <label for="visualizer">Visualiser</label>
-            <select id="visualiser" onchange="Renderer.set_visualiser(this.value)">
-                <option value="RadialWave">Radial</option>
-                <option value="Starfield">Starfield</option>
-                <option value="DVD">DVD</option>
-                <option value="Spectrum">Debug Spectrum</option>
-                <option value="null">Off</option>
-            </select>
-            <button onclick="hide_settings()">Close</button>
-        </div>
     </div>
+
+    <!-- Visualiser menu -->
+    <div class="box menu" id="visualiser-menu" hidden>
+        <img class="option" data-visualiser="RadialWave" onclick="pick_visualiser(this);"
+            src="./assets/graphics/radial-wave.png">
+        <img class="option" data-visualiser="Starfield" onclick="pick_visualiser(this);"
+            src="./assets/graphics/starfield.png">
+        <img class="option" data-visualiser="DVD" onclick="pick_visualiser(this);" src="./assets/graphics/dvd.png">
+        <img class="option" data-visualiser="Spectrum" onclick="pick_visualiser(this);"
+            src="./assets/graphics/spectrum.png">
+        <img class="option" data-visualiser="null" onclick="pick_visualiser(this);"
+            src="./assets/graphics/music-controls.svg">
+    </div>
+
+    <!-- Radio Menu -->
+    <div class="box menu" id="radio-menu" hidden>
+        <img class="option station" data-source="radio.winglessradio" onclick="pick_source(this);"
+            src="https://cast.wingless.cc/static/uploads/album_art.1657710906.jpg">
+        <img class="option icon-mic" data-source="mic" onclick="pick_source(this);"
+            src="./assets/graphics/music-controls.svg#mic" alt="🎤">
+    </div>
+
     <!-- Chromatic Aberration Effect, affectionately named "kill" -->
     <svg width="0" height="0">
         <filter id="kill">
@@ -78,14 +90,66 @@
         Player.init();
         Radio.init();
         Renderer.init();
+
+        // Load the last used visualiser
+        var last_source = window.localStorage.getItem("last_visualiser")
+        if (last_source == null) {
+            last_source = "RadialWave"
+        }
+        pick_visualiser(document.querySelector(`#visualiser-menu [data-visualiser="${last_source}"]`));
+
+        // // Load the last used audio source.
+        // var last_source = window.localStorage.getItem("last_source")
+        // if (last_source == null) {
+        //     last_source = "radio.winglessradio"
+        // }
+        // pick_source(document.querySelector(`#radio-menu [data-source="${last_source}"]`));
+
+        // This has been moved into radio.js for authentic spaghetti code.
+
     })
-    function hide_settings() {
-        document.getElementById("settings").style.display = "none";
-        document.getElementById("settings-btn").style.display = "";
+
+    function toggle_menu(id) {
+        const element = document.getElementById(id);
+        if (element.hasAttribute("hidden")) {
+            element.removeAttribute("hidden");
+        } else {
+            element.setAttribute("hidden", "");
+        }
     }
-    function show_settings() {
-        document.getElementById("settings-btn").style.display = "none";
-        document.getElementById("settings").style.display = "";
+
+    function pick_source(element) {
+
+        if (!element.classList.contains("selected")) {
+
+            const source = element.dataset.source;
+            Player.setSource(source);
+
+            for (const child of element.parentElement.children) {
+                child.classList.remove("selected");
+            }
+            element.classList.add("selected");
+        }
+
+        // Hide the menu
+        element.parentElement.setAttribute("hidden", "");
+    }
+    function pick_visualiser(element) {
+
+        // Bail out if the option is already selected.
+        if (!element.classList.contains("selected")) {
+
+            const visualiser = element.dataset.visualiser;
+            Renderer.set_visualiser(visualiser)
+
+            for (const child of element.parentElement.children) {
+                child.classList.remove("selected");
+            }
+            element.classList.add("selected");
+        }
+
+        // Hide the menu
+        element.parentElement.setAttribute("hidden", "");
     }
 </script>
 

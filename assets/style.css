@@ -32,6 +32,7 @@ body {
     max-width: 70%;
     max-height: 40%;
 }
+
 img.kill {
     -webkit-filter: url("#kill");
     filter: url("#kill");
@@ -193,6 +194,35 @@ canvas.RadialWave {
     animation: filter-animation 60s infinite;
 }
 
+.menu {
+    display: flex;
+    position: absolute;
+    align-self: center;
+}
+
+.menu img.option {
+    object-fit: contain;
+    width: 10em;
+    border-radius: 10px;
+    margin-left: var(--gap);
+}
+
+.menu img.option:first-child {
+    margin-left: 0;
+}
+
+.menu .option.selected {
+    outline: 2px solid rgb(210, 207, 219);
+}
+
+.menu .option:hover {
+    outline: 2px solid rgba(210, 207, 219, 0.2);
+}
+
+.menu[hidden] {
+    display: none;
+}
+
 /* Change the hue of the canvas over time */
 @-webkit-keyframes filter-animation {
     0% {
@@ -242,15 +272,19 @@ canvas.RadialWave {
     0% {
         background-position: 0% 0%;
     }
+
     20% {
         background-position: 100% 50%;
     }
+
     40% {
         background-position: 0% 100%;
     }
+
     60% {
         background-position: 50% 0%;
     }
+
     80% {
         background-position: 100% 100%;
     }
@@ -274,11 +308,13 @@ canvas.RadialWave {
 
 @media (min-width: 1200px) {
     #player {
-        backdrop-filter: blur(15px);
-        -webkit-backdrop-filter: blur(15px);
-
         align-self: baseline;
         position: absolute;
+    }
+
+    .box {
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
     }
 
     #stage {}

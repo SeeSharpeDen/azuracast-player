@@ -9,21 +9,14 @@ const Radio = {
         // Download information from the API
         fetch(`${this.server}/api/stations`).then((response) => response.json()).then((stations) => {
             this.stations = stations;
-            // Update the drop down box in the settings and change to the first viable station.
-            let select = document.getElementById("radio-select");
-            if (stations.length > 0) {
-                stations.forEach(stn => {
-                    if (stn.mounts.length > 0) {
-                        // Add the station to the drop down box.
-                        const optionNode = document.createElement("option");
-                        optionNode.value = `radio.${stn.shortcode}`;
-                        const textNode = document.createTextNode(stn.name);
-                        optionNode.appendChild(textNode);
-                        select.appendChild(optionNode);
-                    }
-                });
+
+            // This has been moved here from index.html for authentic spaghetti code.
+            // Load the last used audio source.
+            var last_source = window.localStorage.getItem("last_source")
+            if (last_source == null) {
+                last_source = "radio.winglessradio"
             }
-            Player.setSource("radio.winglessradio");
+            pick_source(document.querySelector(`#radio-menu [data-source="${last_source}"]`));
         });
     },
 

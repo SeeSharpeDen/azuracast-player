@@ -325,6 +325,7 @@ const Renderer = {
             this.stop();
             console.info("Turning off visualiser");
         }
+        Renderer.frame_callback();
     },
     init_video() {
         // Get the canvas.
@@ -342,16 +343,6 @@ const Renderer = {
             console.log(`Visualizer ${key}`);
             Visualisers[key].class_name = key.toString();
         });
-
-        console.log(`Last value: ${document.getElementById("visualiser").value}`);
-
-        var last_visualiser = window.localStorage.getItem("last_visualiser")
-        if (last_visualiser != null && Visualisers[last_visualiser] != null) {
-            this.set_visualiser(last_visualiser);
-        }
-        else {
-            this.set_visualiser("RadialWave");
-        }
 
         this.kill_red = document.querySelector("#kill_red");
         this.kill_blue = document.querySelector("#kill_blue");

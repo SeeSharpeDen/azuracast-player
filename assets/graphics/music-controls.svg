@@ -13,6 +13,22 @@
     <view id="settings" viewBox="560 0 120 120">
       <title>settings</title>
     </view>
+    <view id="music" viewBox="0 140 120 120">
+      <title>music</title>
+    </view>
+    <view id="radio" viewBox="140 140 120 120">
+      <title>radio</title>
+    </view>
+    <view id="mic" viewBox="280 140 120 120">
+      <title>mic</title>
+    </view>
+    <view id="spectrum" viewBox="420 140 120 120">
+      <title>spectrum</title>
+    </view>
+    <view id="view-5" viewBox="560 140 120 120">
+      <title>View 5</title>
+    </view>
+    <bx:guide x="340.526" y="184.367" angle="90"/>
   </defs>
   <path d="M 166.716 10 L 233.284 60 L 166.716 110 L 166.716 10 Z" style="alignment-baseline: initial; stroke-miterlimit: 5; stroke-width: 5px; stroke-linejoin: round; stroke-linecap: round; fill: none; stroke: rgb(255, 255, 255);"/>
   <rect x="350" y="16.964" width="19.865" height="86.071" style="fill: none; stroke-linecap: round; stroke-width: 5px; stroke-linejoin: round; stroke: rgb(255, 255, 255);"/>
@@ -24,4 +40,27 @@
   <path style="fill: rgb(216, 216, 216); stroke-linecap: round; stroke-width: 6px; stroke: rgb(255, 255, 255);" d="M 110 10 L 10 110"/>
   <path style="fill: rgb(216, 216, 216); stroke-linecap: round; stroke-width: 6px; stroke: rgb(255, 255, 255);" d="M 110 110 L 10 10" transform="matrix(-1, 0, 0, -1, 120, 120)"/>
   <path style="fill: none; stroke: rgb(255, 255, 255); stroke-linecap: round; stroke-width: 18.6585px; stroke-linejoin: round;" transform="matrix(0.267975, 0, 0, 0.267975, 405.486023, -103.59874)" d="M 764.489 419 L 836.511 419 L 846.819 478.602 A 139.795 139.795 0 0 1 891.568 504.437 L 948.338 483.563 L 984.349 545.937 L 937.887 584.665 A 139.795 139.795 0 0 1 937.887 636.335 L 984.349 675.063 L 948.338 737.437 L 891.568 716.563 A 139.795 139.795 0 0 1 846.819 742.398 L 836.511 802 L 764.489 802 L 754.181 742.398 A 139.795 139.795 0 0 1 709.432 716.563 L 652.662 737.437 L 616.651 675.063 L 663.113 636.335 A 139.795 139.795 0 0 1 663.113 584.665 L 616.651 545.937 L 652.662 483.563 L 709.432 504.437 A 139.795 139.795 0 0 1 754.181 478.602 Z M 800.5 533.9 A 76.6 76.6 0 0 0 800.5 687.1 A 76.6 76.6 0 0 0 800.5 533.9" bx:shape="cog 800.5 610.5 76.6 139.795 191.5 0.29 6 1@04d4e240"/>
+  <rect x="321.153" y="145.946" width="37.694" height="80.342" style="stroke-width: 5px; paint-order: stroke; stroke: rgb(255, 255, 255); fill: none;" rx="18.847" ry="18.847"/>
+  <path d="M 367.517 185 L 367.517 207.662 C 367.517 222.859 355.197 235.179 340 235.179 C 324.803 235.179 312.483 222.859 312.483 207.662 L 312.483 185" style="stroke-width: 5px; paint-order: stroke; stroke: rgb(255, 255, 255); fill: none; stroke-linecap: round;"/>
+  <line style="fill: rgb(216, 216, 216); stroke: rgb(255, 255, 255); stroke-width: 5px; stroke-linecap: round;" x1="340" y1="250.681" x2="340" y2="237.112"/>
+  <line style="fill: rgb(216, 216, 216); stroke: rgb(255, 255, 255); stroke-width: 5px; stroke-linecap: round;" x1="315.496" y1="254.054" x2="364.504" y2="254.054"/>
+  <ellipse style="fill: none; stroke: rgb(255, 255, 255); stroke-width: 5px; stroke-linecap: round; stroke-linejoin: round;" cx="83.42" cy="233.629" rx="11.959" ry="9.6"/>
+  <path d="M 95.478 159.603 L 32.522 170.235 M 32.522 242.988 L 32.522 158.801 L 95.478 148.169 L 95.478 232.356" style="fill: none; stroke: rgb(255, 255, 255); stroke-width: 5px; stroke-linecap: round; stroke-linejoin: round;"/>
+  <ellipse style="fill: none; stroke: rgb(255, 255, 255); stroke-width: 5px; stroke-linecap: round; stroke-linejoin: round;" cx="20.313" cy="242.896" rx="11.959" ry="9.6"/>
+  <rect x="146.263" y="186.139" width="107.474" height="60.597" style="stroke: rgb(255, 255, 255); stroke-width: 5px; fill: none; stroke-linecap: round; stroke-linejoin: round;"/>
+  <ellipse style="stroke: rgb(255, 255, 255); stroke-width: 5px; fill: none; stroke-linecap: round; stroke-linejoin: round;" cx="176.859" cy="216.351" rx="20.58" ry="20.58"/>
+  <polyline style="stroke: rgb(255, 255, 255); stroke-width: 5px; stroke-linecap: round; stroke-linejoin: round; fill: none;" points="243.079 185.518 243.079 171.831 178.19 171.831 178.19 185.881"/>
+  <line style="fill: none; stroke: rgb(255, 255, 255); stroke-width: 5px; stroke-linecap: round;" x1="155.328" y1="185.282" x2="155.328" y2="147.264"/>
+  <g transform="matrix(1, 0, 0, 1, -0.193263, 3.740684)">
+    <line style="fill: rgb(216, 216, 216); stroke: rgb(255, 255, 255); stroke-width: 5px; stroke-linecap: round;" x1="206.663" y1="212.61" x2="240.689" y2="212.61"/>
+    <line style="fill: rgb(216, 216, 216); stroke: rgb(255, 255, 255); stroke-width: 5px; stroke-linecap: round;" x1="206.664" y1="226.61" x2="240.688" y2="226.61"/>
+    <line style="fill: rgb(216, 216, 216); stroke: rgb(255, 255, 255); stroke-width: 5px; stroke-linecap: round;" x1="206.664" y1="198.61" x2="240.688" y2="198.61"/>
+  </g>
+  <line style="stroke: rgb(255, 255, 255); stroke-width: 5px; stroke-linecap: round; fill: none;" x1="430.331" y1="239.256" x2="430.331" y2="173.917"/>
+  <line style="stroke: rgb(255, 255, 255); stroke-width: 5px; stroke-linecap: round; fill: none;" x1="450.115" y1="239.256" x2="450.115" y2="155.987"/>
+  <line style="stroke: rgb(255, 255, 255); stroke-width: 5px; stroke-linecap: round; fill: none;" x1="469.898" y1="239.256" x2="469.898" y2="148.389"/>
+  <line style="stroke: rgb(255, 255, 255); stroke-width: 5px; stroke-linecap: round; fill: none;" x1="489.684" y1="239.256" x2="489.684" y2="176.652"/>
+  <line style="stroke: rgb(255, 255, 255); stroke-width: 5px; stroke-linecap: round; fill: none;" x1="509.467" y1="239.256" x2="509.467" y2="193.975"/>
+  <line style="stroke: rgb(255, 255, 255); stroke-width: 5px; stroke-linecap: round; fill: none;" x1="529.252" y1="239.256" x2="529.252" y2="183.338"/>
+  <line style="fill: none; stroke-width: 5px; stroke-linecap: round; stroke: rgb(255, 255, 255);" x1="429.576" y1="251.611" x2="530.424" y2="251.611"/>
 </svg>

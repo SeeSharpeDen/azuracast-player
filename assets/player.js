@@ -82,8 +82,8 @@ const Player = {
 
     init() {
         // Setup the controls.
-        this.controls.pause_icon = document.querySelector(".controls .pause-icon");
-        this.controls.play_icon = document.querySelector(".controls .play-icon");
+        this.controls.pause_icon = document.querySelector(".controls .icon-pause");
+        this.controls.play_icon = document.querySelector(".controls .icon-play");
         this.controls.volume_slider = document.querySelector(".controls #volume-slider");
 
         // Set the volume of the audio to the value of the slider.
