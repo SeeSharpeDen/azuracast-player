@@ -82,25 +82,12 @@ const Player = {
 
     init() {
         // Setup the controls.
-        this.controls.pause_icon = document.querySelector(".controls .play-icon");
-        this.controls.play_icon = document.querySelector(".controls .pause-icon");
+        this.controls.pause_icon = document.querySelector(".controls .pause-icon");
+        this.controls.play_icon = document.querySelector(".controls .play-icon");
         this.controls.volume_slider = document.querySelector(".controls #volume-slider");
 
         // Set the volume of the audio to the value of the slider.
         this.setVolume(this.controls.volume_slider.value / 100);
-
-        // // When the audio play event is fired swap the icons around for the play button.
-        // element.addEventListener("play", () => {
-        //     this.controls.play_icon.setAttribute("hidden", "");
-        //     this.controls.pause_icon.removeAttribute("hidden");
-        // });
-        // // When the audio pause event is fired swap the icons around for the play button.
-        // element.addEventListener("pause", () => {
-        //     this.controls.play_icon.removeAttribute("hidden");
-        //     this.controls.pause_icon.setAttribute("hidden", "");
-        // });
-
-        // this.setSource("mic");
 
         // Setup the details.
         this.details.album_art = document.querySelector(".album-art img");
@@ -130,10 +117,13 @@ const Player = {
         }
     },
 
-    // Play the music and renderer if one exists.
+    // Play the music
     play() {
         if (this.audio.element != null) {
             this.audio.element.play();
+
+            this.controls.play_icon.setAttribute("hidden", "");
+            this.controls.pause_icon.removeAttribute("hidden");
         }
     },
 
@@ -141,13 +131,19 @@ const Player = {
     pause() {
         if (this.audio.element != null) {
             this.audio.element.pause();
+
+            this.controls.play_icon.removeAttribute("hidden");
+            this.controls.pause_icon.setAttribute("hidden", "");
         }
     },
 
-    // Stop the music and renderer if one exists.
+    // Stop the music
     stop() {
         if (this.audio.element != null) {
             this.audio.element.stop();
+
+            this.controls.play_icon.removeAttribute("hidden");
+            this.controls.pause_icon.setAttribute("hidden", "");
         }
     },
 
