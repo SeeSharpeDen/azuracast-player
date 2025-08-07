@@ -13,14 +13,28 @@ const Renderer = {
     // An array of visualisers to use.
     visualiser: null,
     analyser: null,
-    video_ctx: null,
+    gl: null,
     canvas: null,
-    time: 0.0,
+    run_time: 0.0,
     last_time: null,
     freq_data_buffer: null,
     intensity_g_width: 3,
     intensity_g_offset: 5,
     frame_handle: 0,
+    audio_tex: {
+        width: 1024,
+        height: 512,
+        data: null,
+        gl_texture: null
+    },
+
+    projection_matrix: new Float32Array([
+        1.0, 0.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        0.0, 0.0, 0.0, 1.0,
+    ]),
+    ubo: null,
 
     kill: {
         red: null,
@@ -33,7 +47,7 @@ const Renderer = {
     },
 
     stop() {
-        this.video_ctx.clearRect(0, 0, canvas.width, canvas.height);
+        gl.clear(gl.COLOR_BUFFER_BIT);
         window.cancelAnimationFrame(Renderer.frame_handle);
         console.log("Stopping");
     },
@@ -52,6 +66,8 @@ const Renderer = {
             this.visualiser = module;
             this.canvas.classList.add(this.visualiser.css_class);
 
+            this.visualiser.start(this.gl, this.ubo);
+
             Renderer.frame_callback();
         }).catch(error => {
             console.error('Failed to load visualiser:', error);
@@ -62,34 +78,71 @@ const Renderer = {
         this.canvas = document.getElementById("canvas");
 
         // Get the canvas context.
-        this.video_ctx = canvas.getContext("2d");
+        this.gl = canvas.getContext("webgl2");
+
+        if (!this.gl) {
+            throw new Error("WebGL 2.0 is not supported.");
+        } else {
+            console.log("Using WebGL 2 context");
+        }
+
+        // Create our UBO
+        // TODO: add 'kill' to our UBO.
+
+        const projection_size = this.projection_matrix.byteLength;
+        const float_size = 2 * Float32Array.BYTES_PER_ELEMENT;
+
+        const ubo_size = projection_size + float_size + 20;
+        console.log(`UBO Size: ${ubo_size}`);
+
+
+        this.ubo = this.gl.createBuffer();
+        this.gl.bindBuffer(this.gl.UNIFORM_BUFFER, this.ubo);
+        this.gl.bufferData(this.gl.UNIFORM_BUFFER, ubo_size, this.gl.DYNAMIC_DRAW);
+        this.gl.bindBuffer(this.gl.UNIFORM_BUFFER, null);
 
         resize_canvas();
 
         // Reset the time.
-        this.time = 0.0;
-
-        Object.keys(Visualisers).forEach(key => {
-            console.log(`Visualizer ${key}`);
-            Visualisers[key].class_name = key.toString();
-        });
-
+        this.run_time = 0.0;
+        this.last_time = Date.now();
         this.kill_red = document.querySelector("#kill_red");
         this.kill_blue = document.querySelector("#kill_blue");
+
+        // setup the audio texture.
+        this.init_audio_texture(this.audio_tex, this.gl);
     },
     init_audio(ctx) {
+
         // Create the audio context and audio source.
         this.analyser = ctx.createAnalyser();
 
         this.analyser.smoothingTimeConstant = 0.8;
-
-        // this.analyser.fftSize = 512;
-        this.analyser.fftSize = 2048;
-        // this.analyser.minDecibels = -90;
-        // this.analyser.maxDecibels = -20;
+        this.analyser.minDecibels = -80;
+        this.analyser.maxDecibels = -15;
+        this.analyser.fftSize = this.audio_tex.width * 2;
 
         // Create our data buffer.
         this.freq_data_buffer = new Uint8Array(this.analyser.frequencyBinCount);
+    },
+    init_audio_texture(tex, gl) {
+        tex.data = new Uint8Array(tex.width * tex.height);
+        tex.gl_texture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, tex.gl_texture);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        // Set the texture to repeat in both the S (horizontal) and T (vertical) directions
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
+
+        gl.texImage2D(
+            gl.TEXTURE_2D, 0,
+            gl.LUMINANCE, tex.width, tex.height, 0,
+            gl.LUMINANCE, gl.UNSIGNED_BYTE, // Texture type.
+            tex.data // The data.
+        );
+
+
     },
     frame_callback() {
         // Draw our frame.
@@ -101,11 +154,9 @@ const Renderer = {
     },
     tick() {
         // Bail if there's not audio, video or visualiser.
-        if (this.analyser == null || this.visualiser == null || this.video_ctx == null) {
+        if (this.analyser == null || this.visualiser == null || this.gl == null) {
             return false;
         }
-
-        this.video_ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         // Get the delta time.
         let now = Date.now();
@@ -113,11 +164,12 @@ const Renderer = {
         this.last_time = now;
 
         if (!isNaN(delta_time)) {
-            this.time += delta_time;
+            this.run_time += Math.min(delta_time, 0.33);
         }
 
         // Get the audio spectrum data.
-        this.analyser.getByteFrequencyData(this.freq_data_buffer);
+        // this.analyser.getByteFrequencyData(this.freq_data_buffer);
+        this.update_audio_texture(this.audio_tex, this.gl);
 
         // Get the intensity of the music by applying a gaussian function to the waveform.
         let intensity = 0.0;
@@ -141,11 +193,49 @@ const Renderer = {
             update_kill(intensity);
         }
 
+        this.update_ubo(this.gl, intensity, this.run_time);
+
         // Draw the visualiser.
-        this.visualiser.draw_frame(this.video_ctx, this.freq_data_buffer, delta_time, intensity);
+        this.visualiser.draw_frame(this.gl, this.freq_data_buffer, delta_time, intensity);
 
         return true;
     },
+    update_ubo(gl, intensity, time) {
+        const projection_size = this.projection_matrix.byteLength;
+        const float_size = 1 * Float32Array.BYTES_PER_ELEMENT;
+
+        gl.bindBuffer(gl.UNIFORM_BUFFER, this.ubo);
+        gl.bufferSubData(gl.UNIFORM_BUFFER, projection_size, new Float32Array([intensity]));
+        gl.bufferSubData(gl.UNIFORM_BUFFER, projection_size + float_size, new Float32Array([time]));
+
+        gl.bindBuffer(Renderer.gl.UNIFORM_BUFFER, null);
+    },
+
+    update_audio_texture(tex, gl) {
+        // The the frequency data.
+
+        this.analyser.getByteFrequencyData(this.freq_data_buffer);
+
+        // TODO: Instead of the CPU moving the data around, we can make the GPU handle this
+        // by keeping track of what row of pixels is the latest and offset the UV coordinates
+        // in the shaders.
+
+        // Move the old data down one row of pixels.
+        const old_view = tex.data.subarray(0, tex.data.length - tex.width);
+        tex.data.set(old_view, tex.width);
+
+        // Insert this frame's audio data to the first row of pixels.
+        tex.data.set(this.freq_data_buffer, 0);
+
+        // Update the texture.
+        gl.bindTexture(gl.TEXTURE_2D, tex.gl_texture);
+        gl.texSubImage2D(
+            gl.TEXTURE_2D, 0, // Texture and mip map level.
+            0, 0, tex.width, tex.height, // x,y,width & height of the texture.
+            gl.LUMINANCE, gl.UNSIGNED_BYTE, // Texture type.
+            tex.data // The data.
+        );
+    }
 }
 
 // Thanks ChatGPT. You slowed me down to come up with this. Thanks for confusing me.
@@ -198,6 +288,20 @@ function resize_canvas() {
     let parent_rect = canvas.parentNode.getBoundingClientRect();
     canvas.width = parent_rect.width;
     canvas.height = parent_rect.height;
-    console.log(canvas);
+
+    Renderer.gl.viewport(0, 0, canvas.width, canvas.height);
+
+    let aspect = canvas.width / canvas.height;
+    if (aspect > 1) {
+        Renderer.projection_matrix[0] = 1.0 / aspect;
+        Renderer.projection_matrix[5] = 1.0;
+    } else {
+        Renderer.projection_matrix[0] = 1.0
+        Renderer.projection_matrix[5] = aspect
+    }
+    Renderer.gl.bindBuffer(Renderer.gl.UNIFORM_BUFFER, Renderer.ubo);
+    Renderer.gl.bufferSubData(Renderer.gl.UNIFORM_BUFFER, 0, Renderer.projection_matrix);
+    Renderer.gl.bindBuffer(Renderer.gl.UNIFORM_BUFFER, null);
+
 }
 setResizeHandler(resize_canvas, 350);
