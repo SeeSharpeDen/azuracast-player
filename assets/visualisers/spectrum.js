@@ -106,11 +106,11 @@ void main() {
     gl.clear(gl.COLOR_BUFFER_BIT);
 }
 
-export function draw_frame(gl, samples_data, delta_time, intensity) {
+export function draw_frame(gl, ctx) {
     gl.clear(gl.COLOR_BUFFER_BIT);
     
     gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, Renderer.audio_tex.gl_texture);
+    gl.bindTexture(gl.TEXTURE_2D, ctx.audio_tex);
     gl.uniform1i(texture_location, 0);
     
 

@@ -40,14 +40,14 @@ uniform u_visualizer {
 uniform sampler2D u_audio_tex;
 
 float radius = 0.56;
-float scale = 0.35;
+float scale = 0.6;
 float power = 1.5;
 float kill_scale = 0.25;
 float time_scale_color = 0.2;
 float rotate_speed = 0.6;
 float timewarp_factor = 0.08;
 float x_mn = 0.08;
-float x_mx = 0.7;
+float x_mx = 0.56;
 float colour_flicker = 5.6;
 out float colour_shift;
 out float intensity;
@@ -141,20 +141,11 @@ void main() {
     gl.clear(gl.COLOR_BUFFER_BIT);
 }
 
-let radius_scale = 0.65;
-let radius_margin = 200;
-let revolutions = 1;
-let rotate_speed = 0.08;
-let power = 1.5;
-let scale = 0.8;
-let line_width = 3;
-let radius_intensity = 40;
-
-export function draw_frame(gl, samples_data, delta_time, intensity) {
+export function draw_frame(gl, ctx) {
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, Renderer.audio_tex.gl_texture);
+    gl.bindTexture(gl.TEXTURE_2D, ctx.audio_tex);
     gl.uniform1i(texture_location, 0);
 
     // Draw the circle using LINE_LOOP

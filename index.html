@@ -84,12 +84,20 @@
 
 <script src="./assets/player.js"></script>
 <script src="./assets/radio.js"></script>
-<script src="./assets/visualizer.js"></script>
-<script>
+<!-- <script src="./assets/visualizer.js"></script> -->
+<script type="module">
+    import * as Renderer from './assets/renderer.js';
+
     window.addEventListener('load', function () {
+        const canvas = document.getElementById("canvas");
+        Player.renderer = Renderer;
+        console.log(Player);
+        
+       
         Player.init();
         Radio.init();
-        Renderer.init();
+        Renderer.init(canvas);
+        // Renderer.init();
 
         // Load the last used visualiser
         var last_source = window.localStorage.getItem("last_visualiser")
@@ -151,6 +159,9 @@
         // Hide the menu
         element.parentElement.setAttribute("hidden", "");
     }
+    window.pick_visualiser = pick_visualiser;
+    window.pick_source = pick_source;
+    window.toggle_menu = toggle_menu;
 </script>
 
 </html>

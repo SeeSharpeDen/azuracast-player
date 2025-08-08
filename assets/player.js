@@ -1,4 +1,5 @@
 const Player = {
+    renderer: null,
     audio: {
         ctx: null,
         element: null,
@@ -34,10 +35,10 @@ const Player = {
             }).then((stream) => {
                 this.source = this.ctx.createMediaStreamSource(stream);
 
-                if (Renderer.analyser == null) {
-                    Renderer.init_audio(this.ctx);
+                if (Player.renderer.analyser == null) {
+                    Player.renderer.init_audio(this.ctx);
                 }
-                this.source.connect(Renderer.analyser);
+                this.source.connect(Player.renderer.analyser);
             }).catch((err) => {
                 console.error(`Can't get Microphone. Reason: ${err}`);
             });
@@ -61,11 +62,11 @@ const Player = {
             this.gain.connect(this.ctx.destination);
 
             this.element.src = src_url;
-
-            if (Renderer.analyser == null) {
-                Renderer.init_audio(this.ctx);
+            
+            if (Player.renderer.analyser == null) {
+                Player.renderer.init_audio(this.ctx);
             }
-            this.source.connect(Renderer.analyser);
+            this.source.connect(Player.renderer.analyser);
         },
     },
     controls: {
