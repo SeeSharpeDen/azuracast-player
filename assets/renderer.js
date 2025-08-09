@@ -1,6 +1,6 @@
 const Visualisers = [
     'dvd.js',
-    'radial-wave.js',
+    'radial-wave/module.js',
     'spectrum.js',
     'starfield.js'
 ]
@@ -56,7 +56,7 @@ function init(canvas_elm) {
 
     // Create the UBO
     console.log(`UBO bytes: ${ubo.bytes}`);
-    
+
     ubo.gl_buffer = gl.createBuffer();
     gl.bindBuffer(gl.UNIFORM_BUFFER, ubo.gl_buffer);
     gl.bufferData(gl.UNIFORM_BUFFER, 80, gl.DYNAMIC_DRAW);
@@ -180,7 +180,7 @@ function tick() {
     gl.bufferSubData(gl.UNIFORM_BUFFER, projection.bytes + float_size, new Float32Array([time]));
 
     gl.bindBuffer(gl.UNIFORM_BUFFER, null);
-    
+
     const frame_ctx = {
         audio_tex: audio_tex.gl_texture,
         ubo: ubo.gl_buffer,
@@ -243,26 +243,99 @@ function frame_callback() {
     frame_handle = window.requestAnimationFrame(frame_callback);
 }
 
-function set_visualiser(visualiser_name) {
-    import(`./visualisers/${visualiser_name}`).then(module => {
-        console.log('loaded visualiser: ', module);
-        // Remove the old visualizer class from the canvas element.
-        if (active_vis != null) {
-            canvas.classList.remove(active_vis.css_class);
+async function set_visualiser(visualiser_name) {
+    console.log('loading visualiser: ', visualiser_name);
+    const path = `visualisers/${visualiser_name}`;
+    const module = await import(`./${path}`);
+
+    // If the module has the load_assets function. Call it.
+    if (!!module.load_assets) {
+        const parts = path.split('/');
+        const dir = parts.slice(0, -1).join('/');
+        await module.load_assets?.(`./assets/${dir}`);
+    }
+
+    // Remove the old visualizer class from the canvas element.
+    if (active_vis != null) {
+        canvas.classList.remove(active_vis.css_class);
+    }
+
+    window.localStorage.setItem("last_visualiser", visualiser_name);
+
+    // Set our new visualizer and add it's class to the canvas element.
+    active_vis = module;
+    canvas.classList.add(active_vis.css_class);
+
+    // Start the shader.
+    const start_ctx = {
+        ubo: ubo.gl_buffer,
+        shader_mananger: new ShaderManager(gl)
+    }
+    active_vis.start(gl, start_ctx);
+
+    // Begin rendering.
+    frame_callback();
+}
+
+class ShaderManager {
+    constructor(gl) {
+        this.gl = gl;
+        this.programs = new Map();
+    }
+    compile_shader(source, type) {
+        const gl = this.gl;
+        const shader = gl.createShader(type);
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
+
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+            const err = new Error(`Shader compilation error: ${gl.getShaderInfoLog(shader)}`);
+            gl.deleteShader(shader);
+            throw err;
         }
 
-        window.localStorage.setItem("last_visualiser", visualiser_name);
+        return shader;
+    }
+    link_program(shaders) {
+        const gl = this.gl;
+        const program = gl.createProgram();
 
-        // Set our new visualizer and add it's class to the canvas element.
-        active_vis = module;
-        canvas.classList.add(active_vis.css_class);
+        for (const shader of shaders) {
+            gl.attachShader(program, shader);
+        }
 
-        active_vis.start(gl, ubo.gl_buffer);
+        gl.linkProgram(program);
 
-        frame_callback();
-    }).catch(error => {
-        console.error('Failed to load visualiser:', error);
-    });
+        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+            const err = new Error(`Program linking error: ${gl.getShaderInfoLog(shader)}`);
+            gl.deleteProgram(program);
+            throw err;
+        }
+
+        for (const shader of shaders) {
+            gl.detachShader(program, shader);
+            gl.deleteShader(shader);
+        }
+
+        return program;
+    }
+    create_program(name, shader_sources) {
+        if (this.programs.has(name)) {
+            console.warn(`Program with name '${name}' already exists.`);
+            return this.programs.get(name);
+        }
+        const compiled_shaders = [];
+        for (const shader of shader_sources) {
+            const compiled = this.compile_shader(shader.source, shader.type);
+            compiled_shaders.push(compiled);
+        }
+        const program = this.link_program(compiled_shaders);
+        return program;
+    }
+
+    get_program(name) {
+        return this.programs.get(name);
+    }
 }
 
 export {
@@ -270,6 +343,7 @@ export {
     init_audio,
     set_visualiser,
     analyser,
+    ShaderManager
 }
 // TODO: Add support for kill.
 // function update_kill(intensity) {

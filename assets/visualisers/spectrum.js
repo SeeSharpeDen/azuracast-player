@@ -13,7 +13,7 @@ let wf_verts = [
 
 let texture_location;
 
-export function start(gl, ubo) {
+export function start(gl, ctx) {
     // Create a buffer for the vertices
     const wf_vert_buff = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, wf_vert_buff);
@@ -98,7 +98,7 @@ void main() {
 
     // Point the UBO to shader.
     gl.uniformBlockBinding(program, ubo_index, 0);
-    gl.bindBufferBase(gl.UNIFORM_BUFFER, 0, ubo);
+    gl.bindBufferBase(gl.UNIFORM_BUFFER, 0, ctx.ubo);
 
     // Set the viewport and clear the canvas
     // gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);

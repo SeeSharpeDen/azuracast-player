@@ -49,7 +49,7 @@
 
     <!-- Visualiser menu -->
     <div class="box menu" id="visualiser-menu" hidden>
-        <img class="option" data-visualiser="radial-wave.js" onclick="pick_visualiser(this);"
+        <img class="option" data-visualiser="radial-wave/module.js" onclick="pick_visualiser(this);"
             src="./assets/graphics/radial-wave.png">
         <img class="option" data-visualiser="starfield.js" onclick="pick_visualiser(this);"
             src="./assets/graphics/starfield.png">
@@ -88,23 +88,24 @@
 <script type="module">
     import * as Renderer from './assets/renderer.js';
 
-    window.addEventListener('load', function () {
-        const canvas = document.getElementById("canvas");
-        Player.renderer = Renderer;
-        console.log(Player);
+    window.addEventListener('load', async function () {
         
-       
+        Player.renderer = Renderer;
         Player.init();
+        
         Radio.init();
+        
+        const canvas = document.getElementById("canvas");
         Renderer.init(canvas);
-        // Renderer.init();
-
+        
         // Load the last used visualiser
         var last_source = window.localStorage.getItem("last_visualiser")
         if (last_source == null) {
-            last_source = "RadialWave"
+            last_source = "radial-wave/module.js"
         }
-        pick_visualiser(document.querySelector(`#visualiser-menu [data-visualiser="${last_source}"]`));
+
+        await Renderer.set_visualiser('glitched-logo/module.js');
+        // pick_visualiser(document.querySelector(`#visualiser-menu [data-visualiser="${last_source}"]`));
 
         // // Load the last used audio source.
         // var last_source = window.localStorage.getItem("last_source")
@@ -142,13 +143,13 @@
         // Hide the menu
         element.parentElement.setAttribute("hidden", "");
     }
-    function pick_visualiser(element) {
+    async function pick_visualiser(element) {
 
         // Bail out if the option is already selected.
         if (!element.classList.contains("selected")) {
 
             const visualiser = element.dataset.visualiser;
-            Renderer.set_visualiser(visualiser)
+            await Renderer.set_visualiser(visualiser);
 
             for (const child of element.parentElement.children) {
                 child.classList.remove("selected");
