@@ -9,6 +9,7 @@ let active_vis = null;
 let analyser = null;
 let gl = null;
 let canvas = null;
+let glitched_logo = null;
 
 const projection = {
     matrix: new Float32Array([
@@ -43,7 +44,7 @@ let intensity_g_offset = 5;
  * Initialize the renderer and the GL context.
  * @param {Element} canvas_elm The canvas to be rendering to.
  */
-function init(canvas_elm) {
+async function init(canvas_elm) {
     canvas = canvas_elm;
     gl = canvas.getContext("webgl2");
     if (!gl) {
@@ -85,6 +86,12 @@ function init(canvas_elm) {
         gl.LUMINANCE, gl.UNSIGNED_BYTE, // Texture type.
         audio_tex.data // The data.
     );
+
+    // Load the glitched logo.
+    glitched_logo = await load_visualiser("glitched-logo/module.js");
+
+    gl.clearColor(0, 0, 0, 0.0);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
     // TODO: support kill again
     // this.kill_red = document.querySelector("#kill_red");
@@ -129,7 +136,9 @@ function init_audio(ctx) {
     // Create the audio context and audio source.
     analyser = ctx.createAnalyser();
 
-    analyser.smoothingTimeConstant = 0.8;
+    // analyser.smoothingTimeConstant = 0.8;
+    analyser.smoothingTimeConstant = 0.92;
+
     analyser.minDecibels = -80;
     analyser.maxDecibels = -15;
     analyser.fftSize = audio_tex.width * 2;
@@ -181,12 +190,20 @@ function tick() {
 
     gl.bindBuffer(gl.UNIFORM_BUFFER, null);
 
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
     const frame_ctx = {
         audio_tex: audio_tex.gl_texture,
         ubo: ubo.gl_buffer,
     };
-    // Call the draw_frame function on the visualiser.
-    active_vis.draw_frame(gl, frame_ctx)
+    gl.disable(gl.BLEND);
+    gl.depthMask(true);
+
+    active_vis.draw_frame(gl, frame_ctx);
+
+    if (active_vis.details.draw_logo) {
+        glitched_logo.draw_frame(gl, frame_ctx);
+    }
     return true;
 }
 /**
@@ -242,8 +259,7 @@ function frame_callback() {
     tick();
     frame_handle = window.requestAnimationFrame(frame_callback);
 }
-
-async function set_visualiser(visualiser_name) {
+async function load_visualiser(visualiser_name) {
     console.log('loading visualiser: ', visualiser_name);
     const path = `visualisers/${visualiser_name}`;
     const module = await import(`./${path}`);
@@ -255,6 +271,19 @@ async function set_visualiser(visualiser_name) {
         await module.load_assets?.(`./assets/${dir}`);
     }
 
+    // Start the shader.
+    const start_ctx = {
+        ubo: ubo.gl_buffer,
+        shader_mananger: new ShaderManager(gl)
+    }
+    module.start(gl, start_ctx);
+    console.log('Finished loading visualiser: ', visualiser_name);
+    return module;
+}
+async function set_visualiser(visualiser_name) {
+
+    const visualiser = await load_visualiser(visualiser_name);
+
     // Remove the old visualizer class from the canvas element.
     if (active_vis != null) {
         canvas.classList.remove(active_vis.css_class);
@@ -263,15 +292,8 @@ async function set_visualiser(visualiser_name) {
     window.localStorage.setItem("last_visualiser", visualiser_name);
 
     // Set our new visualizer and add it's class to the canvas element.
-    active_vis = module;
+    active_vis = visualiser;
     canvas.classList.add(active_vis.css_class);
-
-    // Start the shader.
-    const start_ctx = {
-        ubo: ubo.gl_buffer,
-        shader_mananger: new ShaderManager(gl)
-    }
-    active_vis.start(gl, start_ctx);
 
     // Begin rendering.
     frame_callback();

@@ -9,6 +9,10 @@ let image = null;
 let noise = null;
 let image_location = null;
 let noise_location = null;
+let scale = 0.6;
+
+let pos_location = null;
+let uv_location = null;
 
 const resources = {
     vertex_source: null,
@@ -48,7 +52,7 @@ export async function load_assets(path) {
 }
 
 export function start(gl, ctx) {
-    grid_mesh = generate_grid_mesh(gl, 20, 600, 1.0, 0.5);
+    grid_mesh = generate_grid_mesh(gl, 20, 150, scale, 0.5 * scale);
 
     // Create our shader program from the downloaded resources.
     const shader_sources = [
@@ -59,12 +63,12 @@ export function start(gl, ctx) {
 
     gl.useProgram(shader_program);
     // Set the a_pos attribute of the shader program to the first 2 floats of the vertex.
-    const pos_location = gl.getAttribLocation(shader_program, "a_pos");
+    pos_location = gl.getAttribLocation(shader_program, "a_pos");
     gl.enableVertexAttribArray(pos_location);
     gl.vertexAttribPointer(pos_location, 2, gl.FLOAT, false, vert_stride, 0);
 
     // Set the a_uv attribute of the shader program to the last 2 floats of the vertex.
-    const uv_location = gl.getAttribLocation(shader_program, "a_uv");
+    uv_location = gl.getAttribLocation(shader_program, "a_uv");
     gl.enableVertexAttribArray(uv_location);
     gl.vertexAttribPointer(uv_location, 2, gl.FLOAT, false, vert_stride, float_bytes * 2);
 
@@ -79,14 +83,18 @@ export function start(gl, ctx) {
     noise_location = gl.getUniformLocation(shader_program, 'u_noise');
     image = texture_from_image(gl, resources.logo_image);
     noise = texture_from_image(gl, resources.noise_image, gl.NEAREST, gl.REPEAT);
-
-    // Set the clear colour and clear the canvas.
-    gl.clearColor(0, 0, 0, 0.0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
 }
 
 export function draw_frame(gl, ctx) {
-    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.depthMask(false);
+  
+    gl.useProgram(shader_program);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, grid_mesh.vertex_buffer);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, grid_mesh.index_buffer);
 
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, ctx.audio_tex);
@@ -100,7 +108,14 @@ export function draw_frame(gl, ctx) {
     gl.bindTexture(gl.TEXTURE_2D, noise);
     gl.uniform1i(noise_location, 2);
 
-    gl.useProgram(shader_program);
+    // Set the a_pos attribute of the shader program to the first 2 floats of the vertex.
+    gl.enableVertexAttribArray(pos_location);
+    gl.vertexAttribPointer(pos_location, 2, gl.FLOAT, false, vert_stride, 0);
+
+    // Set the a_uv attribute of the shader program to the last 2 floats of the vertex.
+    gl.enableVertexAttribArray(uv_location);
+    gl.vertexAttribPointer(uv_location, 2, gl.FLOAT, false, vert_stride, float_bytes * 2);
+
     gl.drawElements(gl.TRIANGLES, grid_mesh.triangle_count, gl.UNSIGNED_SHORT, 0);
 }
 

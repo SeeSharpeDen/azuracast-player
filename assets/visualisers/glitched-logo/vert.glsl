@@ -12,23 +12,46 @@ uniform sampler2D u_audio_tex;
 uniform sampler2D u_noise;
 
 out vec2 v_uv;
+out float kill;
 
-float offset_scale = 0.3;
-float time_scale = 0.001;
-float noise_scale = 0.08;
-float noise_displacement = 0.08;
-float noise_scaler = 1.2;
-float amplitude_displacement = 1.2;
+float time_scale = 0.008;
+float intensity_scale = 0.04;
+float noise_scale = 0.025;
+float displacement = 0.1;
+float time_warp = 0.015;
 
+vec2 pos_correction = vec2(-0.05, 0.0);
+float angle = -0.2;
 
 void main() {
-    float noise = texture(u_noise, vec2(0.0, (a_uv.y * noise_scale) + (time * time_scale))).r;
-    float noise_dsiplace = (1.0 - noise * 2.0) * noise_displacement;
+    // Scale the uv coordinates.
+    float noise_pos = a_uv.y * noise_scale;
+    // Offset the noise based on the intensity.
+    noise_pos += u_intensity * intensity_scale;
+    // Scroll the noise based on the time.
+    noise_pos += time * time_scale;
 
-    float amplitude = texture(u_audio_tex, vec2(noise, 0)).r;
-    amplitude = pow(amplitude, 2.0) * amplitude_displacement;
-    
-    vec2 offset = vec2((amplitude * noise * noise_scaler) + noise_dsiplace, 0.0);
-    gl_Position = vec4(a_pos + offset, 0.0, 1.0);
+    float noise = texture(u_noise, vec2(0.0, noise_pos)).r;
+
+    float amplitude = texture(u_audio_tex, vec2(noise, 0.0)).r;
+    // Offset the amplitude from 0-1 to -1 to 1. (So 127 is zero)
+    amplitude = 1.0 - (amplitude * 2.0);
+    amplitude = pow(amplitude, 2.0);
+
+    float glitch_displacement = amplitude * (noise * noise) * displacement;
+
+    vec2 offset = vec2(glitch_displacement, 0.0);
+
+    // Rotate the vertices.
+    float c = cos(angle);
+    float s = sin(angle);
+    mat2 rotation_mat = mat2 (
+        c, -s,
+        s, c
+    );
+    vec2 rotated_pos = rotation_mat * (a_pos + offset);
+
+    gl_Position = u_projection * vec4(rotated_pos + pos_correction, 0.0, 1.0);
     v_uv = a_uv;
+    kill = u_intensity;
 }

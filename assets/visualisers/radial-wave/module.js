@@ -2,10 +2,11 @@ export const details = {
     title: "Radial Wave",
     description: "Spiky ball of music flying through space.",
     icon: "assets/graphics/radial-wave.png",
-    css_class: 'RadialWave'
+    css_class: 'RadialWave',
+    draw_logo: true,
 }
 
-const samples = 1400;
+const samples = 800;
 let vertices = [];
 let texture_location = null;
 
@@ -15,7 +16,7 @@ const resrouces = {
 }
 
 let shader_program = null;
-
+let vertex_buffer = null;
 const float_bytes = Float32Array.BYTES_PER_ELEMENT;
 const vert_stride = 4 * float_bytes;
 
@@ -31,6 +32,13 @@ export async function load_assets(path) {
 export function start(gl, ctx) {
 
     // Create a circle of vertices with X, Y, U, V.
+
+    // Place a vertex in the middle.
+    vertices.push(0.0);
+    vertices.push(0.0);
+    vertices.push(0.0);
+    vertices.push(0.0);
+
     const circle = Math.PI * 2;
     const circle_slice = circle / samples;
     const half_samples = samples / 2;
@@ -50,9 +58,15 @@ export function start(gl, ctx) {
         }
         vertices.push(y);
     }
+
+    // Get the first vertex in the circle and put it at the end to create a complete circle.
+    vertices.push(vertices[4]);
+    vertices.push(vertices[5]);
+    vertices.push(vertices[6]);
+    vertices.push(vertices[7]);
     // Create a vertex buffer and fill it with the vertices.
-    const vertexBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+    vertex_buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 
     // Create our shader program from the downloaded resources.
@@ -84,20 +98,27 @@ export function start(gl, ctx) {
 
     // Get the location of the texture.
     texture_location = gl.getUniformLocation(shader_program, 'u_audio_tex');
-
-    // Set the clear colour and clear the canvas.
-    gl.clearColor(0, 0, 0, 0.0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
 }
 
 export function draw_frame(gl, ctx) {
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.useProgram(shader_program);
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
 
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, ctx.audio_tex);
     gl.uniform1i(texture_location, 0);
 
+    // Set the a_pos attribute of the shader program to the first 2 floats of the vertex.
+    const pos_location = gl.getAttribLocation(shader_program, "a_pos");
+    gl.enableVertexAttribArray(pos_location);
+    const pos_offset = 0;
+    gl.vertexAttribPointer(pos_location, 2, gl.FLOAT, false, vert_stride, pos_offset);
+
+    // Set the a_uv attribute of the shader program to the last 2 floats of the vertex.
+    const uv_location = gl.getAttribLocation(shader_program, "a_uv");
+    gl.enableVertexAttribArray(uv_location);
+    const uv_offset = float_bytes * 2;
+    gl.vertexAttribPointer(uv_location, 2, gl.FLOAT, false, vert_stride, uv_offset);
     // Draw the circle using LINE_LOOP
-    gl.useProgram(shader_program);
-    gl.drawArrays(gl.LINE_LOOP, 0, vertices.length / 4);
+    gl.drawArrays(gl.TRIANGLE_FAN, 0, vertices.length / 4);
 }

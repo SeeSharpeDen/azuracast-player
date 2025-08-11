@@ -12,7 +12,7 @@
 
 <body>
     <div id="stage">
-        <img class="logo kill" src="assets/graphics/branding/ssd_radio_s_masked.png">
+        <!-- <img class="logo kill" src="assets/graphics/branding/ssd_radio_s_masked.png"> -->
         <canvas id="canvas"></canvas>
     </div>
     <div id="player" class="box">
@@ -88,35 +88,38 @@
 <script type="module">
     import * as Renderer from './assets/renderer.js';
 
-    window.addEventListener('load', async function () {
-        
-        Player.renderer = Renderer;
-        Player.init();
-        
-        Radio.init();
-        
-        const canvas = document.getElementById("canvas");
-        Renderer.init(canvas);
-        
-        // Load the last used visualiser
-        var last_source = window.localStorage.getItem("last_visualiser")
-        if (last_source == null) {
-            last_source = "radial-wave/module.js"
-        }
+    console.log("Loading...");
+    Player.renderer = Renderer;
+    console.log("Player Init");
+    Player.init();
+    console.log("Radio Init");
+    Radio.init();
+    console.log("Renderer Init");
+    const canvas = document.getElementById("canvas");
+    Renderer.init(canvas);
+    window.Renderer = Renderer;
 
-        await Renderer.set_visualiser('glitched-logo/module.js');
-        // pick_visualiser(document.querySelector(`#visualiser-menu [data-visualiser="${last_source}"]`));
+    // Load the last used visualiser
+    var last_source = window.localStorage.getItem("last_visualiser")
+    if (last_source == null) {
+        last_source = "radial-wave/module.js"
+    }
 
-        // // Load the last used audio source.
-        // var last_source = window.localStorage.getItem("last_source")
-        // if (last_source == null) {
-        //     last_source = "radio.winglessradio"
-        // }
-        // pick_source(document.querySelector(`#radio-menu [data-source="${last_source}"]`));
+    var elm = document.querySelector(`#visualiser-menu [data-visualiser="${last_source}"]`);
+    if (!elm) {
+        elm = document.querySelector(`#visualiser-menu [data-visualiser="radial-wave/module.js"]`);
+    }
+    pick_visualiser(elm);
+    // pick_visualiser(document.querySelector(`#visualiser-menu [data-visualiser="${last_source}"]`));
 
-        // This has been moved into radio.js for authentic spaghetti code.
+    // // Load the last used audio source.
+    // var last_source = window.localStorage.getItem("last_source")
+    // if (last_source == null) {
+    //     last_source = "radio.winglessradio"
+    // }
+    // pick_source(document.querySelector(`#radio-menu [data-source="${last_source}"]`));
 
-    })
+    // This has been moved into radio.js for authentic spaghetti code.
 
     function toggle_menu(id) {
         const element = document.getElementById(id);
