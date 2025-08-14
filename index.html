@@ -51,7 +51,7 @@
     <div class="box menu" id="visualiser-menu" hidden>
         <img class="option" data-visualiser="radial-wave/module.js" onclick="pick_visualiser(this);"
             src="./assets/graphics/radial-wave.png">
-        <img class="option" data-visualiser="starfield.js" onclick="pick_visualiser(this);"
+        <img class="option" data-visualiser="starfield/module.js" onclick="pick_visualiser(this);"
             src="./assets/graphics/starfield.png">
         <img class="option" data-visualiser="dvd.js" onclick="pick_visualiser(this);" src="./assets/graphics/dvd.png">
         <img class="option" data-visualiser="spectrum.js" onclick="pick_visualiser(this);"
@@ -110,6 +110,7 @@
         elm = document.querySelector(`#visualiser-menu [data-visualiser="radial-wave/module.js"]`);
     }
     pick_visualiser(elm);
+    // pick_visualiser
     // pick_visualiser(document.querySelector(`#visualiser-menu [data-visualiser="${last_source}"]`));
 
     // // Load the last used audio source.

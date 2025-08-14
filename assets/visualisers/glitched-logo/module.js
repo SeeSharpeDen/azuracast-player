@@ -4,15 +4,9 @@ export const details = {
     css_class: 'glitched-logo'
 }
 
-let texture_location = null;
 let image = null;
 let noise = null;
-let image_location = null;
-let noise_location = null;
 let scale = 0.6;
-
-let pos_location = null;
-let uv_location = null;
 
 const resources = {
     vertex_source: null,
@@ -23,7 +17,7 @@ const resources = {
 
 let grid_mesh = null;
 
-let shader_program = null;
+let shader = {};
 
 const float_bytes = Float32Array.BYTES_PER_ELEMENT;
 const vert_stride = 4 * float_bytes;
@@ -52,37 +46,35 @@ export async function load_assets(path) {
 }
 
 export function start(gl, ctx) {
+    
     grid_mesh = generate_grid_mesh(gl, 20, 150, scale, 0.5 * scale);
 
     // Create our shader program from the downloaded resources.
-    const shader_sources = [
-        { source: resources.vertex_source, type: gl.VERTEX_SHADER },
-        { source: resources.fragment_source, type: gl.FRAGMENT_SHADER }
-    ]
-    shader_program = ctx.shader_mananger.create_program("radial-wave", shader_sources);
+    {
+        const shader_sources = [
+            { source: resources.vertex_source, type: gl.VERTEX_SHADER },
+            { source: resources.fragment_source, type: gl.FRAGMENT_SHADER }
+        ];
+        const program = ctx.shader_mananger.create_program("radial-wave", shader_sources);
+        shader = ctx.shader_mananger.program_details(program);
+    }
 
-    gl.useProgram(shader_program);
+    gl.useProgram(shader.program);
     // Set the a_pos attribute of the shader program to the first 2 floats of the vertex.
-    pos_location = gl.getAttribLocation(shader_program, "a_pos");
-    gl.enableVertexAttribArray(pos_location);
-    gl.vertexAttribPointer(pos_location, 2, gl.FLOAT, false, vert_stride, 0);
+    gl.enableVertexAttribArray(shader.attributes.a_pos);
+    gl.vertexAttribPointer(shader.attributes.a_pos, 2, gl.FLOAT, false, vert_stride, 0);
 
     // Set the a_uv attribute of the shader program to the last 2 floats of the vertex.
-    uv_location = gl.getAttribLocation(shader_program, "a_uv");
-    gl.enableVertexAttribArray(uv_location);
-    gl.vertexAttribPointer(uv_location, 2, gl.FLOAT, false, vert_stride, float_bytes * 2);
+    gl.enableVertexAttribArray(shader.attributes.a_uv);
+    gl.vertexAttribPointer(shader.attributes.a_uv, 2, gl.FLOAT, false, vert_stride, float_bytes * 2);
 
     // Set the u_visualizer UBO. This contains information like intensity and time.
-    const ubo_index = gl.getUniformBlockIndex(shader_program, 'u_visualizer');
-    gl.uniformBlockBinding(shader_program, ubo_index, 0);
+    gl.uniformBlockBinding(shader.program, shader.ubos.u_visualizer, 0);
     gl.bindBufferBase(gl.UNIFORM_BUFFER, 0, ctx.ubo);
 
-    // Get the location of the texture.
-    texture_location = gl.getUniformLocation(shader_program, 'u_audio_tex');
-    image_location = gl.getUniformLocation(shader_program, 'u_image');
-    noise_location = gl.getUniformLocation(shader_program, 'u_noise');
     image = texture_from_image(gl, resources.logo_image);
     noise = texture_from_image(gl, resources.noise_image, gl.NEAREST, gl.REPEAT);
+
 }
 
 export function draw_frame(gl, ctx) {
@@ -90,31 +82,31 @@ export function draw_frame(gl, ctx) {
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     gl.depthMask(false);
-  
-    gl.useProgram(shader_program);
+
+    gl.useProgram(shader.program);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, grid_mesh.vertex_buffer);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, grid_mesh.index_buffer);
 
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, ctx.audio_tex);
-    gl.uniform1i(texture_location, 0);
+    gl.uniform1i(shader.uniforms.u_audio_tex, 0);
 
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, image);
-    gl.uniform1i(image_location, 1);
+    gl.uniform1i(shader.uniforms.u_image, 1);
 
     gl.activeTexture(gl.TEXTURE2);
     gl.bindTexture(gl.TEXTURE_2D, noise);
-    gl.uniform1i(noise_location, 2);
+    gl.uniform1i(shader.uniforms.u_noise, 2);
 
     // Set the a_pos attribute of the shader program to the first 2 floats of the vertex.
-    gl.enableVertexAttribArray(pos_location);
-    gl.vertexAttribPointer(pos_location, 2, gl.FLOAT, false, vert_stride, 0);
+    gl.enableVertexAttribArray(shader.attributes.a_pos);
+    gl.vertexAttribPointer(shader.attributes.a_pos, 2, gl.FLOAT, false, vert_stride, 0);
 
     // Set the a_uv attribute of the shader program to the last 2 floats of the vertex.
-    gl.enableVertexAttribArray(uv_location);
-    gl.vertexAttribPointer(uv_location, 2, gl.FLOAT, false, vert_stride, float_bytes * 2);
+    gl.enableVertexAttribArray(shader.attributes.a_uv);
+    gl.vertexAttribPointer(shader.attributes.a_uv, 2, gl.FLOAT, false, vert_stride, float_bytes * 2);
 
     gl.drawElements(gl.TRIANGLES, grid_mesh.triangle_count, gl.UNSIGNED_SHORT, 0);
 }

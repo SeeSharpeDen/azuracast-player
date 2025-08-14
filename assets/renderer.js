@@ -22,12 +22,13 @@ const projection = {
 }
 
 const ubo = {
-    bytes: projection.bytes + (2 * Float32Array.BYTES_PER_ELEMENT),
+    bytes: projection.bytes + (3 * Float32Array.BYTES_PER_ELEMENT),
     gl_buffer: null,
 }
 
 let time = 0.0;
-let last_time = Date.now();
+let last_timestamp = 0;
+let delta_time = 0.0;
 
 const audio_tex = {
     width: 1024,
@@ -52,7 +53,6 @@ async function init(canvas_elm) {
     }
 
     // Reset the time.
-    last_time = Date.now();
     time = 0;
 
     // Create the UBO
@@ -147,7 +147,7 @@ function init_audio(ctx) {
     audio_tex.buffer = new Uint8Array(analyser.frequencyBinCount);
 }
 
-function tick() {
+function tick(timestamp) {
     // Bail if there is an Audio or Video context, and there's something to render.
     if (analyser == null || active_vis == null || gl == null) {
         return false;
@@ -155,13 +155,16 @@ function tick() {
 
     // Update the time.
     // TODO: If delta time isn't being used. There is a simpler way of getting elapsed time.
-    let now = Date.now();
-    let delta_time = (now - last_time) / 1000;
-    last_time = now;
 
-    if (!isNaN(delta_time)) {
-        time += Math.min(delta_time, 0.33);
+    if (!last_timestamp) {
+        last_timestamp = timestamp;
     }
+
+    delta_time = (timestamp - last_timestamp) / 1000.0;
+    last_timestamp = timestamp;
+
+    // If the delta time is very large just limit it.
+    time += Math.min(delta_time, 0.333);
 
     // Get the audio spectrum data.
     update_audio_texture();
@@ -184,9 +187,14 @@ function tick() {
 
     // TODO: Make this one call.
     // Set the intensity.
-    gl.bufferSubData(gl.UNIFORM_BUFFER, projection.bytes, new Float32Array([intensity]));
+    let offset = projection.bytes;
+    gl.bufferSubData(gl.UNIFORM_BUFFER, offset, new Float32Array([intensity]));
     // Set the time.
-    gl.bufferSubData(gl.UNIFORM_BUFFER, projection.bytes + float_size, new Float32Array([time]));
+    offset = offset + float_size;
+    gl.bufferSubData(gl.UNIFORM_BUFFER, offset, new Float32Array([time]));
+    // Set the delta time.
+    offset = offset + float_size;
+    gl.bufferSubData(gl.UNIFORM_BUFFER, offset, new Float32Array([delta_time]));
 
     gl.bindBuffer(gl.UNIFORM_BUFFER, null);
 
@@ -204,6 +212,7 @@ function tick() {
     if (active_vis.details.draw_logo) {
         glitched_logo.draw_frame(gl, frame_ctx);
     }
+
     return true;
 }
 /**
@@ -255,8 +264,8 @@ function update_audio_texture() {
 }
 
 let frame_handle = 0;
-function frame_callback() {
-    tick();
+function frame_callback(timestamp) {
+    tick(timestamp);
     frame_handle = window.requestAnimationFrame(frame_callback);
 }
 async function load_visualiser(visualiser_name) {
@@ -271,17 +280,22 @@ async function load_visualiser(visualiser_name) {
         await module.load_assets?.(`./assets/${dir}`);
     }
 
-    // Start the shader.
+    // Start the visualizer.
     const start_ctx = {
         ubo: ubo.gl_buffer,
         shader_mananger: new ShaderManager(gl)
     }
     module.start(gl, start_ctx);
+
     console.log('Finished loading visualiser: ', visualiser_name);
     return module;
 }
 async function set_visualiser(visualiser_name) {
 
+    // Reset the gl context.
+    reset_gl();
+
+    // Load and start the visualizer.
     const visualiser = await load_visualiser(visualiser_name);
 
     // Remove the old visualizer class from the canvas element.
@@ -295,8 +309,35 @@ async function set_visualiser(visualiser_name) {
     active_vis = visualiser;
     canvas.classList.add(active_vis.css_class);
 
+
     // Begin rendering.
-    frame_callback();
+    // frame_callback();
+}
+
+function reset_gl() {
+    // Unbind all buffers
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+    gl.bindBuffer(gl.TRANSFORM_FEEDBACK_BUFFER, null);
+
+    // Unbind all textures
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+
+    // Unbind vertex array objects (VAOs)
+    gl.bindVertexArray(null);
+
+    // Unbind the program
+    gl.useProgram(null);
+
+    // Disable common state flags
+    gl.disable(gl.BLEND);
+    gl.disable(gl.CULL_FACE);
+    gl.disable(gl.DEPTH_TEST);
+    gl.disable(gl.SCISSOR_TEST);
+
+    // Set default blend function
+    gl.blendFunc(gl.ONE, gl.ZERO);
 }
 
 class ShaderManager {
@@ -318,45 +359,88 @@ class ShaderManager {
 
         return shader;
     }
-    link_program(shaders) {
-        const gl = this.gl;
-        const program = gl.createProgram();
+    create_program(name, shader_sources, tf_varyings = []) {
 
-        for (const shader of shaders) {
-            gl.attachShader(program, shader);
-        }
-
-        gl.linkProgram(program);
-
-        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-            const err = new Error(`Program linking error: ${gl.getShaderInfoLog(shader)}`);
-            gl.deleteProgram(program);
-            throw err;
-        }
-
-        for (const shader of shaders) {
-            gl.detachShader(program, shader);
-            gl.deleteShader(shader);
-        }
-
-        return program;
-    }
-    create_program(name, shader_sources) {
+        // If a shader already exists, return it.
         if (this.programs.has(name)) {
             console.warn(`Program with name '${name}' already exists.`);
             return this.programs.get(name);
         }
+
+        // Compile all the shaders.
         const compiled_shaders = [];
         for (const shader of shader_sources) {
             const compiled = this.compile_shader(shader.source, shader.type);
             compiled_shaders.push(compiled);
         }
-        const program = this.link_program(compiled_shaders);
+
+        // Create our shader program and link all the compiled shaders to it.
+        const program = gl.createProgram();
+        for (const shader of compiled_shaders) {
+            gl.attachShader(program, shader);
+        }
+
+        // If there are any transform feedback varyings, add them.
+        if (tf_varyings.length > 0) {
+            this.gl.transformFeedbackVaryings(program, tf_varyings, gl.INTERLEAVED_ATTRIBS);
+        }
+
+        // Finalize the shader program and check for errors.
+        gl.linkProgram(program);
+        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+            const err = new Error(`Program linking error: ${gl.getProgramInfoLog(program)}`);
+            gl.deleteProgram(program);
+            throw err;
+        }
+
+        // Cleanup the compiled shaders.
+        for (const shader of compiled_shaders) {
+            gl.detachShader(program, shader);
+            gl.deleteShader(shader);
+        }
+
+        this.programs.set(name, program);
         return program;
     }
 
     get_program(name) {
         return this.programs.get(name);
+    }
+
+    program_details(program) {
+        const gl = this.gl;
+
+        const details = {
+            attributes: {},
+            uniforms: {},
+            ubos: {},
+            program: program
+        };
+
+        const attrib_count = gl.getProgramParameter(program, gl.ACTIVE_ATTRIBUTES);
+        for (let i = 0; i < attrib_count; i++) {
+            const item = gl.getActiveAttrib(program, i);
+            const location = gl.getAttribLocation(program, item.name);
+            details.attributes[item.name] = location;
+        }
+
+        const uniform_count = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
+        for (let i = 0; i < uniform_count; i++) {
+            const item = gl.getActiveUniform(program, i);
+            const location = gl.getUniformLocation(program, item.name);
+            if (location) {
+                details.uniforms[item.name] = location;
+            }
+        }
+
+        const ubo_count = gl.getProgramParameter(program, gl.ACTIVE_UNIFORM_BLOCKS);
+        for (let i = 0; i < ubo_count; i++) {
+            const item = gl.getActiveUniformBlockName(program, i);
+            const location = gl.getUniformBlockIndex(program, item);
+            details.ubos[item] = location;
+        }
+
+        return details;
     }
 }
 
