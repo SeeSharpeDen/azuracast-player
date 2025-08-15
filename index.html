@@ -15,8 +15,12 @@
         <!-- <img class="logo kill" src="assets/graphics/branding/ssd_radio_s_masked.png"> -->
         <canvas id="canvas"></canvas>
     </div>
+
     <div id="player" class="box">
-        <div class="album-art"><img src="https://server1.wingless.cc:2087/static/uploads/album_art.1657710906.jpg">
+        <div class="album-art loading">
+            <div class="loader"></div>
+            <img onload="document.querySelector('#player .album-art').classList.remove('loading')"
+                src="./assets/graphics/radial-wave.png">
         </div>
         <div class="stack">
             <div class="track-details">
@@ -25,21 +29,17 @@
             </div>
             <p class="blurb">There's <span id="listeners">nobody</span> listening.</p>
             <div class="controls">
-                <button id="play-btn" onclick="Player.toggle()">
-                    <img class="icon-play" src="./assets/graphics/music-controls.svg#play" alt="⏯️">
+                <button id="play-btn">
+                    <img class="icon-play" src="./assets/graphics/music-controls.svg#play" alt="⏯️" hidden>
+                    <img class="icon-load" src="./assets/graphics/music-controls.svg#loading" alt="⌛">
                     <img class="icon-pause" src="./assets/graphics/music-controls.svg#pause" alt="⏯️" hidden>
                 </button>
                 <span class="volume">
                     <img class="icon-volume" src="./assets/graphics/music-controls.svg#volume"
                         style="margin-right: var(--gap);">
-                    <input type="range" id="volume-slider" min="0" max="100"
+                    <input type="range" id="volume-slider" min="0" max="100" value="100"
                         oninput="Player.setVolume(this.value / 100)">
                 </span>
-                <button id="source-btn" onclick="toggle_menu('radio-menu')">
-                    <img class="icon-music" src="./assets/graphics/music-controls.svg#music" alt="♫" hidden>
-                    <img class="icon-radio" src="./assets/graphics/music-controls.svg#radio" alt="📻">
-                    <img class="icon-mic" src="./assets/graphics/music-controls.svg#mic" alt="🎤" hidden>
-                </button>
                 <button id="visualiser-btn" onclick="toggle_menu('visualiser-menu')">
                     <img class="icond-spectrum" src="./assets/graphics/music-controls.svg#spectrum" alt="🎞">
                 </button>
@@ -53,75 +53,33 @@
             src="./assets/graphics/radial-wave.png">
         <img class="option" data-visualiser="starfield/module.js" onclick="pick_visualiser(this);"
             src="./assets/graphics/starfield.png">
-        <img class="option" data-visualiser="dvd.js" onclick="pick_visualiser(this);" src="./assets/graphics/dvd.png">
         <img class="option" data-visualiser="spectrum.js" onclick="pick_visualiser(this);"
             src="./assets/graphics/spectrum.png">
-        <img class="option" data-visualiser="null" onclick="pick_visualiser(this);"
-            src="./assets/graphics/music-controls.svg">
     </div>
-
-    <!-- Radio Menu -->
-    <div class="box menu" id="radio-menu" hidden>
-        <img class="option station" data-source="radio.winglessradio" onclick="pick_source(this);"
-            src="https://cast.wingless.cc/static/uploads/album_art.1657710906.jpg">
-        <img class="option icon-mic" data-source="mic" onclick="pick_source(this);"
-            src="./assets/graphics/music-controls.svg#mic" alt="🎤">
-    </div>
-
-    <!-- Chromatic Aberration Effect, affectionately named "kill" -->
-    <svg width="0" height="0">
-        <filter id="kill">
-            <feColorMatrix type="matrix" result="red_" values="2 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" />
-            <feColorMatrix type="matrix" in="SourceGraphic" result="blue_"
-                values="0 0 0 0 0  0 2 0 0 0  0 1 1 1 0  0 0 0 1 0" />
-            <feOffset id="kill_red" in="red_" dx="3" dy="0" result="red" />
-            <feOffset id="kill_blue" in="blue_" dx="-3" dy="0" result="blue" />
-            <feBlend mode="overlay" in="red" in2="blue" />
-            <feBlend mode="normal" in="SourceGraphic" />
-        </filter>
-    </svg>
 </body>
 
-<script src="./assets/player.js"></script>
-<script src="./assets/radio.js"></script>
-<!-- <script src="./assets/visualizer.js"></script> -->
 <script type="module">
+    import { Player } from './assets/player.js';
     import * as Renderer from './assets/renderer.js';
+    
+    window.set_visualiser = Renderer.set_visualiser;
 
-    console.log("Loading...");
-    Player.renderer = Renderer;
-    console.log("Player Init");
-    Player.init();
-    console.log("Radio Init");
-    Radio.init();
-    console.log("Renderer Init");
-    const canvas = document.getElementById("canvas");
-    Renderer.init(canvas);
-    window.Renderer = Renderer;
+    const player = new Player("https://cast.wingless.cc/api");
+    window.addEventListener("load", async function () {
+        player.setup_ui();
+        Renderer.init_audio(player.audio_system.context, player.audio_system.source);
 
-    // Load the last used visualiser
-    var last_source = window.localStorage.getItem("last_visualiser")
-    if (last_source == null) {
-        last_source = "radial-wave/module.js"
-    }
+        // Load the renderer then a visualizer at the same time we're loading the stations.
+        const init_renderer = Renderer.init(document.querySelector("#canvas")).then(() => {
+            Renderer.set_visualiser("radial-wave/module.js");
+        });
+        const init_station = player.set_station("winglessradio");
+        await Promise.all([init_renderer, init_station]);
+        
+    });
+</script>
 
-    var elm = document.querySelector(`#visualiser-menu [data-visualiser="${last_source}"]`);
-    if (!elm) {
-        elm = document.querySelector(`#visualiser-menu [data-visualiser="radial-wave/module.js"]`);
-    }
-    pick_visualiser(elm);
-    // pick_visualiser
-    // pick_visualiser(document.querySelector(`#visualiser-menu [data-visualiser="${last_source}"]`));
-
-    // // Load the last used audio source.
-    // var last_source = window.localStorage.getItem("last_source")
-    // if (last_source == null) {
-    //     last_source = "radio.winglessradio"
-    // }
-    // pick_source(document.querySelector(`#radio-menu [data-source="${last_source}"]`));
-
-    // This has been moved into radio.js for authentic spaghetti code.
-
+<script>
     function toggle_menu(id) {
         const element = document.getElementById(id);
         if (element.hasAttribute("hidden")) {
@@ -130,43 +88,18 @@
             element.setAttribute("hidden", "");
         }
     }
-
-    function pick_source(element) {
-
-        if (!element.classList.contains("selected")) {
-
-            const source = element.dataset.source;
-            Player.setSource(source);
-
-            for (const child of element.parentElement.children) {
-                child.classList.remove("selected");
-            }
-            element.classList.add("selected");
-        }
-
-        // Hide the menu
-        element.parentElement.setAttribute("hidden", "");
-    }
     async function pick_visualiser(element) {
-
-        // Bail out if the option is already selected.
-        if (!element.classList.contains("selected")) {
-
-            const visualiser = element.dataset.visualiser;
-            await Renderer.set_visualiser(visualiser);
-
-            for (const child of element.parentElement.children) {
-                child.classList.remove("selected");
-            }
-            element.classList.add("selected");
+        const visualiser_name = element.dataset.visualiser;
+        for (const child of element.parentElement.children) {
+            child.classList.remove("selected");
         }
+        element.classList.add("selected");
 
         // Hide the menu
         element.parentElement.setAttribute("hidden", "");
+        await set_visualiser(visualiser_name);
+
     }
-    window.pick_visualiser = pick_visualiser;
-    window.pick_source = pick_source;
-    window.toggle_menu = toggle_menu;
 </script>
 
 </html>

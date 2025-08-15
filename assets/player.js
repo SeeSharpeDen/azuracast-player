@@ -1,205 +1,175 @@
-const Player = {
-    renderer: null,
-    audio: {
-        ctx: null,
-        element: null,
-        source: null,
-        gain: null,
-        init_mic_pipeline() {
-            if (this.ctx == null) {
-                this.ctx = new window.AudioContext({
-                    latencyHint: 'interactive'
-                });
-            }
-            // Remove the element source and gain nodes.
-            this.element = null;
-            if (this.source != null) {
-                this.source.disconnect();
-                this.source = null;
-            }
+class Player {
+    constructor(api) {
+        this.api = api;
 
+        // Create and configure the audio element.
+        this.audio = new Audio();
+        this.audio.crossOrigin = "anonymous";
 
-            if (this.gain != null) {
-                this.gain.disconnect();
-                this.gain = null;
-            }
+        // Create our audio system.
+        const context = new window.AudioContext();
+        const source = context.createMediaElementSource(this.audio);
+        const gain = context.createGain();
+        /*
+        In the Radio        In the renderer
+        
+            Source ---------------+
+              |                   |
+            Gain                Analyser
+              |                 (renderer)
+            Destination
+            (speakers)
+        */
+        source.connect(gain);
+        gain.connect(context.destination);
 
-            // Add our microphone nodes.
-            return navigator.mediaDevices.getUserMedia({
-                audio: {
-                    echoCancellation: false,
-                    noiseSuppression: false,
-                    autoGainControl: false,
-                    latency: 0.02
-                }
-            }).then((stream) => {
-                this.source = this.ctx.createMediaStreamSource(stream);
-
-                if (Player.renderer.analyser == null) {
-                    Player.renderer.init_audio(this.ctx);
-                }
-                this.source.connect(Player.renderer.analyser);
-            }).catch((err) => {
-                console.error(`Can't get Microphone. Reason: ${err}`);
-            });
-        },
-        init_element_pipeline(src_url) {
-            if (this.ctx == null) {
-                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            // Remove the stream source node.
-            if (this.source != null) {
-                this.source.disconnect();
-                this.source = null;
-            }
-
-            this.element = new Audio();
-            this.element.crossOrigin = "anonymous";
-            this.source = this.ctx.createMediaElementSource(this.element);
-            this.gain = this.ctx.createGain();
-
-            this.source.connect(this.gain);
-            this.gain.connect(this.ctx.destination);
-
-            this.element.src = src_url;
-            
-            if (Player.renderer.analyser == null) {
-                Player.renderer.init_audio(this.ctx);
-            }
-            this.source.connect(Player.renderer.analyser);
-        },
-    },
-    controls: {
-        pause_icon: null,
-        play_icon: null,
-        volume_slider: null,
-    },
-    details: {
-        title: null,
-        artist: null,
-        album: null,
-        album_art: null,
-    },
-
-    init() {
-        // Setup the controls.
-        this.controls.pause_icon = document.querySelector(".controls .icon-pause");
-        this.controls.play_icon = document.querySelector(".controls .icon-play");
-        this.controls.volume_slider = document.querySelector(".controls #volume-slider");
-
-        // Set the volume of the audio to the value of the slider.
-        this.setVolume(this.controls.volume_slider.value / 100);
-
-        // Setup the details.
-        this.details.album_art = document.querySelector(".album-art img");
-        this.details.title = document.querySelector("#track-name");
-        this.details.artist = document.querySelector("#artist-name");
-
-
-        // Setup the media session events.
-        if ("mediaSession" in navigator) {
-            navigator.mediaSession.setActionHandler("play", () => {
-                this.play();
-            })
-            navigator.mediaSession.setActionHandler("pause", () => {
-                this.pause();
-            })
-            navigator.mediaSession.setActionHandler("stop", () => {
-                this.stop();
-            })
-        }
-    },
-    // Toggle between pause and play.
-    toggle() {
-        if (!this.audio.element.paused) {
-            this.pause();
-        } else {
-            this.play();
-        }
-    },
-
-    // Play the music
-    play() {
-        if (this.audio.element != null) {
-            this.audio.element.play();
-
-            this.controls.play_icon.setAttribute("hidden", "");
-            this.controls.pause_icon.removeAttribute("hidden");
-        }
-    },
-
-    // Pause the music.
-    pause() {
-        if (this.audio.element != null) {
-            this.audio.element.pause();
-
-            this.controls.play_icon.removeAttribute("hidden");
-            this.controls.pause_icon.setAttribute("hidden", "");
-        }
-    },
-
-    // Stop the music
-    stop() {
-        if (this.audio.element != null) {
-            this.audio.element.stop();
-
-            this.controls.play_icon.removeAttribute("hidden");
-            this.controls.pause_icon.setAttribute("hidden", "");
-        }
-    },
-
-    // Set the volume of the audio.
-    setVolume(value) {
-        if (this.audio.gain != null) {
-            this.audio.gain.gain.value = value;
-        }
-    },
-    setSource(source) {
-        // If the source is a radio, use that.
-        if (source.startsWith("radio.")) {
-            let src_url = Radio.setStation(source.substr(6));
-            this.audio.init_element_pipeline(src_url);
-            return;
-        } else {
-            // Clear the radio (and stop hitting the API)
-            Radio.setStation(null);
-        }
-
-        if (source == "mic") {
-            this.audio.init_mic_pipeline();
-            return;
-        }
-    },
-
-    // Set the track details of the player and mediaSession.
-    setDetails(title, artist, album, art_url) {
-        this.details.album_art.src = art_url;
-        this.details.title.innerText = title;
-        this.details.artist.innerText = artist;
-        // document.querySelector("#album-name").innerText = album;
-
-        // Update the Media Session's metadata.
-        if ("mediaSession" in navigator) {
-
-            // Get the extension of the song's art.
-            let extension = get_url_extension(art_url);
-            // Change the extension if it's jpg to jpeg for mime conversion.
-            if (extension == "jpg") {
-                extension = "jpeg"
-            }
-
-            // Set the metadata.
-            navigator.mediaSession.metadata = new MediaMetadata({
-                title: title,
-                artist: artist,
-                album: album,
-                artwork: [
-                    {
-                        src: art_url,
-                        type: `image/${extension}`
-                    }
-                ]
-            })
+        this.audio_system = {
+            context,
+            source,
+            gain
         }
     }
+
+    setup_ui() {
+        // Play or pause the audio when the play/pause button is pressed.
+        document.querySelector("#play-btn").onclick = (event) => {
+            this.toggle();
+        };
+
+        // Update the volume.
+        const slider = document.querySelector("#volume-slider");
+        this.set_volume(slider.value / slider.max);
+        slider.oninput = (event) => {
+            const new_volume = event.srcElement.value / event.srcElement.max;
+            this.set_volume(new_volume);
+        };
+        this.audio.oncanplay = (event) => {
+            console.log("Can Play");
+
+            this.set_play_btn("icon-play");
+        };
+    }
+    async toggle() {
+        console.log("toggle");
+
+        const audio = this.audio;
+        const ctx = this.audio_system.context; // Get your AudioContext from the system object
+
+        if (audio.paused) {
+            this.set_play_btn("icon-load");
+            // If the audio context is suspended, resume it.
+            if (ctx.state === 'suspended') {
+                await ctx.resume();
+            }
+
+            await audio.play().then(() => {
+                this.set_play_btn("icon-pause");
+            });
+        } else {
+            this.set_play_btn("icon-load");
+            audio.pause();
+            // Suspend the audio context.
+            // TODO: Pause the renderer?
+            await ctx.suspend();
+            this.set_play_btn("icon-play");
+        }
+    }
+
+    set_play_btn(class_name) {
+        // Hide all the buttons.
+        for (const icon of document.querySelectorAll("#play-btn >*")) {
+            icon.setAttribute("hidden", "");
+        }
+
+        // Un-hide the button we want.
+        document.querySelector(`#play-btn .${class_name}`).removeAttribute("hidden");
+    }
+
+    set_volume(value) {
+        // Set the volume of the player.
+        this.audio_system.gain.gain.value = value;
+    }
+
+    async set_station(shortcode) {
+        // Download the list of radio stations if it's not already done.
+        if (!this.stations) {
+            console.log(`GET: ${this.api}/stations`);
+            const resp = await fetch(`${this.api}/stations`);
+            this.stations = await resp.json();
+        }
+
+        // Find the station with the same shortcode, then find the default mount.
+        const station = this.stations.find((itm) => itm.shortcode == shortcode);
+        if (!station) {
+            throw new Error(`The station '${shortcode}' could not be found.`);
+        }
+        const mount = station.mounts.find((itm) => itm.is_default);
+        if (!station) {
+            throw new Error(`The station '${shortcode}' has no audio streams.`);
+        }
+
+        this.active_mount = mount;
+        this.active_station_id = station.id;
+        // Pause the old audio source.
+        if (this.audio) {
+            this.audio.pause();
+        }
+        // Update the audio source.
+        this.audio.src = mount.url;
+
+        await this.now_playing();
+    }
+
+    async now_playing() {
+        const station_id = this.active_station_id;
+
+        console.log(`GET: ${this.api}/nowplaying/${station_id}`);
+        const data = await fetch(`${this.api}/nowplaying/${station_id}`).then(response => response.json());
+        if (data.listeners.unique == 0) {
+            document.querySelector("#player #listeners").textContent = "nobody";
+        } else {
+            document.querySelector("#player #listeners").textContent = data.listeners.unique;
+        }
+
+        const self = this;
+        const next_check = 2 + data.now_playing.remaining;
+        console.log(`Checking now_playing in ${next_check} seconds`);
+
+        this.now_playing_timeout = setTimeout(async function () {
+            console.log("Checking now_playing");
+            await self.now_playing(station_id);
+        }, next_check * 1000);
+
+        await this.set_current_song(data.now_playing.song);
+    }
+
+    async set_current_song(song) {
+        document.querySelector("#player .track-details>#track-name").textContent = song.title;
+        document.querySelector("#player .track-details>#artist-name").textContent = song.artist;
+
+        // Load in a new image.
+        document.querySelector("#player .album-art").classList.add("loading");
+        const img = document.querySelector("#player .album-art>img");
+        img.src = song.art;
+        // Update the Media Session's metadata.
+        if ("mediaSession" in navigator) {
+            // Fetch just the headers of the album art to get the content type.
+            const content_type = await fetch(song.art, { method: 'HEAD' })
+                .then(resp => resp.headers.get('content-type'));
+
+            // Set the media session's metadata to the current song.
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title: song.title,
+                artist: song.artist,
+                album: song.album,
+                artwork: [
+                    { src: song.art, type: content_type }
+                ]
+            });
+        }
+    }
+}
+
+export {
+    Player
 }

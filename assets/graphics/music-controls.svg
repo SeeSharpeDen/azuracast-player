@@ -25,8 +25,8 @@
     <view id="spectrum" viewBox="420 140 120 120">
       <title>spectrum</title>
     </view>
-    <view id="view-5" viewBox="560 140 120 120">
-      <title>View 5</title>
+    <view id="loading" viewBox="560 140 120 120">
+      <title>Loading (Animated)</title>
     </view>
     <bx:guide x="340.526" y="184.367" angle="90"/>
   </defs>
@@ -63,4 +63,7 @@
   <line style="stroke: rgb(255, 255, 255); stroke-width: 5px; stroke-linecap: round; fill: none;" x1="509.467" y1="239.256" x2="509.467" y2="193.975"/>
   <line style="stroke: rgb(255, 255, 255); stroke-width: 5px; stroke-linecap: round; fill: none;" x1="529.252" y1="239.256" x2="529.252" y2="183.338"/>
   <line style="fill: none; stroke-width: 5px; stroke-linecap: round; stroke: rgb(255, 255, 255);" x1="429.576" y1="251.611" x2="530.424" y2="251.611"/>
+  <path d="M 620 147.487 C 649.002 147.487 672.513 170.998 672.513 200 C 672.513 229.002 649.002 252.513 620 252.513 C 590.998 252.513 567.487 229.002 567.487 200" style="stroke: rgb(255, 255, 255); fill: none; stroke-width: 5px; stroke-linecap: round; transform-box: fill-box; transform-origin: 50% 50%;">
+    <animateTransform type="rotate" additive="sum" attributeName="transform" values="-180;180" begin="0.02s" dur="0.77s" fill="freeze" keyTimes="0; 1" repeatCount="indefinite"/>
+  </path>
 </svg>

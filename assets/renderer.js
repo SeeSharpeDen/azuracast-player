@@ -131,9 +131,9 @@ function resize() {
  * Initializes the audio processing function of the renderer.
  * @param {AudioContext} ctx Active Audio Context/Pipeline.
  */
-function init_audio(ctx) {
+function init_audio(ctx, source) {
 
-    // Create the audio context and audio source.
+    // Create the audio analyser from the audio context.
     analyser = ctx.createAnalyser();
 
     // analyser.smoothingTimeConstant = 0.8;
@@ -142,6 +142,9 @@ function init_audio(ctx) {
     analyser.minDecibels = -80;
     analyser.maxDecibels = -15;
     analyser.fftSize = audio_tex.width * 2;
+
+    // Connect the source audio to the analyser.
+    source.connect(analyser);
 
     // Create our data buffer.
     audio_tex.buffer = new Uint8Array(analyser.frequencyBinCount);

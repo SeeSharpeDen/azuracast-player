@@ -73,7 +73,7 @@ precision mediump float;
 
 out vec4 o_FragColor;
 void main() {
-    discard;
+    o_FragColor = vec4(1.0, 0.0, 1.0, 0.0);
 }`,
                 type: gl.FRAGMENT_SHADER
             },
